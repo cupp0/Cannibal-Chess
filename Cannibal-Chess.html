@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chess</title>
+  <style>
+    body {
+      margin: 0;
+      background: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: white;
+      font-family: sans-serif;
+    }
+
+    canvas {
+      border: 4px solid #555;
+      background: #111;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="board" width="480" height="480"></canvas>
+
+<script>
+const canvas = document.getElementById("board");
+const ctx = canvas.getContext("2d");
+
+const SIZE = 8;
+const TILE = canvas.width / SIZE;
+
+let currentPlayer = "white";
+let selected = null;
+let validMoves = [];
+
+/* ---------- Board ---------- */
+
+const board = [
+  ["r","n","b","q","k","b","n","r"],
+  ["p","p","p","p","p","p","p","p"],
+  ["","","","","","","",""],
+  ["","","","","","","",""],
+  ["","","","","","","",""],
+  ["","","","","","","",""],
+  ["P","P","P","P","P","P","P","P"],
+  ["R","N","B","Q","K","B","N","R"]
+];
+
+/* ---------- Helpers ---------- */
+
+function isWhite(p) { return p === p.toUpperCase(); }
+function isBlack(p) { return p === p.toLowerCase(); }
+
+function belongsToCurrentPlayer(p) {
+  if (!p) return false;
+  return currentPlayer === "white" ? isWhite(p) : isBlack(p);
+}
+
+
+
+function getValidMoves(from) {
+  const moves = [];
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      if (isLegalMove(from, { x, y })) {
+        moves.push({ x, y });
+      }
+    }
+  }
+  return moves;
+}
+
+
+/* ---------- Drawing ---------- */
+
+function drawBoard() {
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      ctx.fillStyle = (x + y) % 2 === 0 ? "#f0d9b5" : "#b58863";
+      ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+
+      if (selected && selected.x === x && selected.y === y) {
+        ctx.strokeStyle = "yellow";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x * TILE + 2, y * TILE + 2, TILE - 4, TILE - 4);
+      }
+
+      drawPiece(x, y, board[y][x]);
+    }
+  }
+}
+
+function drawPiece(x, y, p) {
+  if (!p) return;
+
+  ctx.fillStyle = isWhite(p) ? "#fff" : "#000";
+  const size  = (48 / p.length).toString()
+  ctx.font = size + "px serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillText(
+    p,
+    x * TILE + TILE / 2,
+    y * TILE + TILE / 2
+  );
+}
+
+function drawMoveDots() {
+  if (!selected) return;
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+
+  for (const m of validMoves) {
+    ctx.beginPath();
+    ctx.arc(
+      m.x * TILE + TILE / 2,
+      m.y * TILE + TILE / 2,
+      TILE * 0.12,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+}
+
+
+/* ---------- Movement Logic ---------- */
+
+function inBounds(x, y) {
+  return x >= 0 && x < 8 && y >= 0 && y < 8;
+}
+
+function isLegalMove(from, to) {
+  const p = board[from.y][from.x];
+  const target = board[to.y][to.x];
+
+  if (from.x === to.x && from.y === to.y) return false;
+
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  const dir = isWhite(p) ? -1 : 1;
+
+  for (let i = 0; i < p.length; i++){
+    switch (p.charAt(i).toLowerCase()) {
+      case "p":
+        if (!target && dx === 0 && dy === dir) return true;
+        if (!target && dx === 0 && dy === dir * 2 &&
+            ((isWhite(p) && from.y === 6) || (isBlack(p) && from.y === 1)))
+          return true;
+        if (target && absX === 1 && dy === dir) return true;
+        break;
+
+      case "r":
+        if (dx !== 0 && dy !== 0) break;
+        if (clearPath(from, to)) return true;
+        break;
+
+      case "b":
+        if (absX !== absY) break;
+        if (clearPath(from, to)) return true;
+        break;
+
+
+      case "q":
+        if (!(dx === 0 || dy === 0 || absX === absY)) break;
+        if (clearPath(from, to)) return true;
+        break;
+
+      case "n":
+        if ((absX === 1 && absY === 2) || (absX === 2 && absY === 1)) return true;
+        break;
+
+      case "k":
+        if (absX <= 1 && absY <= 1) return true;
+        break;
+    }
+  }
+
+
+  return false;
+}
+
+function clearPath(from, to) {
+  const dx = Math.sign(to.x - from.x);
+  const dy = Math.sign(to.y - from.y);
+
+  let x = from.x + dx;
+  let y = from.y + dy;
+
+  while (x !== to.x || y !== to.y) {
+    if (board[y][x]) return false;
+    x += dx;
+    y += dy;
+  }
+  return true;
+}
+
+/* ---------- Input ---------- */
+
+canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left) / TILE);
+  const y = Math.floor((e.clientY - rect.top) / TILE);
+
+  if (!inBounds(x, y)) return;
+
+  if (selected) {
+    if (isLegalMove(selected, { x, y })) {
+      if (belongsToCurrentPlayer(board[y][x])){
+        board[y][x] += board[selected.y][selected.x];
+      } else {
+        board[y][x] = board[selected.y][selected.x];
+      }
+      board[selected.y][selected.x] = "";
+      currentPlayer = currentPlayer === "white" ? "black" : "white";
+    }
+    selected = null;
+    validMoves = [];
+
+  } else if (belongsToCurrentPlayer(board[y][x])) {
+    selected = { x, y };
+    validMoves = getValidMoves(selected);
+  }
+
+});
+
+/* ---------- Loop ---------- */
+
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBoard();
+  drawMoveDots();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
