@@ -33,6 +33,44 @@ const ctx = canvas.getContext("2d");
 const SIZE = 8;
 const TILE = canvas.width / SIZE;
 
+const sprites = {};
+let spritesLoaded = false;
+
+const pieceMap = {
+  P: "white-pawn",
+  R: "white-rook",
+  N: "white-knight",
+  B: "white-bishop",
+  Q: "white-queen",
+  K: "white-king",
+  p: "black-pawn",
+  r: "black-rook",
+  n: "black-knight",
+  b: "black-bishop",
+  q: "black-queen",
+  k: "black-king"
+};
+
+function loadSprites() {
+  const entries = Object.entries(pieceMap);
+  let loaded = 0;
+
+  for (const [key, name] of entries) {
+    const img = new Image();
+    img.src = `assets/pieces/${name}.png`;
+    img.onload = () => {
+      loaded++;
+      if (loaded === entries.length) {
+        spritesLoaded = true;
+      }
+    };
+    sprites[key] = img;
+  }
+}
+
+loadSprites();
+
+
 let currentPlayer = "white";
 let selected = null;
 let validMoves = [];
@@ -150,17 +188,34 @@ function drawBoard() {
 function drawPiece(x, y, p) {
   if (!p) return;
 
-  ctx.fillStyle = isWhite(p) ? "#fff" : "#000";
-  const size  = (48 / p.length).toString()
-  ctx.font = size + "px serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+  const img = sprites[p];
 
-  ctx.fillText(
-    p,
-    x * TILE + TILE / 2,
-    y * TILE + TILE / 2
-  );
+  //if no image yet, just display the string
+  if (!img){
+    ctx.fillStyle = isWhite(p) ? "#fff" : "#000";
+    const size  = (48 / p.length).toString()
+    ctx.font = size + "px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    ctx.fillText(
+      p,
+      x * TILE + TILE / 2,
+      y * TILE + TILE / 2
+    );
+  }
+
+  //render the image if we have it
+  else {
+    const pad = TILE * 0.1;
+    ctx.drawImage(
+      img,
+      x * TILE + pad,
+      y * TILE + pad,
+      TILE - pad * 2,
+      TILE - pad * 2
+    );  
+  }
 }
 
 function drawMoveDots() {
