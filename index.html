@@ -418,6 +418,7 @@ function updateCastlingDependencies(from, to){
   if ((from.x === 4 && from.y === 0) || (to.x === 4 && to.y === 0)) blackKingMoved = true;
   if ((from.x === 4 && from.y === 7) || (to.x === 4 && to.y === 7)) whiteKingMoved = true;
 }
+
 function printCastlingDependencies(){
   console.log("black A rook moved: " +blackARookMoved)
   console.log("black H rook moved: " +blackHRookMoved)
@@ -425,6 +426,24 @@ function printCastlingDependencies(){
   console.log("white H rook moved: " +whiteHRookMoved)
   console.log("black king moved: " +blackKingMoved)
   console.log("white king moved: " +whiteKingMoved)
+}
+
+function isPawnPromoting(from, to){
+  let piece = board[from.y][from.x];
+  if (piece.toUpperCase() !== "P") return false;
+  const pawnColor = piece === "P" ? "white" : "black"
+  
+  if (pawnColor === "white" && to.y === 0)return true;
+  if (pawnColor === "black" && to.y === 7)return true;
+}
+
+function promote(from, to){
+  let piece = board[from.y][from.x];
+  if (piece.toUpperCase() !== "P") return false;
+  const pawnColor = piece === "P" ? "white" : "black"
+  
+  if (pawnColor === "white" && to.y === 0){board[to.y][to.x] = "Q"}
+  if (pawnColor === "black" && to.y === 7){board[to.y][to.x] = "q"}
 }
 
 /* ---------- Input ---------- */
@@ -438,16 +457,28 @@ canvas.addEventListener("click", e => {
 
   if (selected) {
     if (isLegalMove(selected, { x, y })) {
+
+      //castles
       if (isCastling(selected, { x, y }) === true){
         castles(selected, {x, y});
-      } else {
-        if (belongsToCurrentPlayer(board[y][x])){
-          board[y][x] += board[selected.y][selected.x];
-        } else {
-          board[y][x] = board[selected.y][selected.x];
-        }
-        board[selected.y][selected.x] = "";
+      } 
+      
+      //consumes
+      else if (belongsToCurrentPlayer(board[y][x])){
+        board[y][x] += board[selected.y][selected.x];
       }
+      
+      //promotes
+      else if (isPawnPromoting(selected, {x, y})){
+        promote(selected, {x, y})
+      }
+
+      //normal move
+      else { board[y][x] = board[selected.y][selected.x] }
+      
+      //empty the 'from' square
+      board[selected.y][selected.x] = "";
+
       updateCastlingDependencies(selected, {x, y})
       //printCastlingDependencies()
       updateSeenSquares();
