@@ -70,9 +70,19 @@ function loadSprites() {
 
 loadSprites();
 
-
 let currentPlayer = "white";
 let selected = null;
+
+//castling stuff
+let whiteCastled = false;
+let blackCastled = false;
+let whiteKingMoved = false;
+let blackKingMoved = false;
+let whiteARookMoved = false;
+let blackARookMoved = false;
+let whiteHRookMoved = false;
+let blackHRookMoved = false;
+
 let validMoves = [];
 
 /* ---------- Board ---------- */
@@ -90,13 +100,18 @@ const board = [
 
 const whiteSeenSquares = []
 const blackSeenSquares = []
+updateSeenSquares()
 
 /* ---------- Helpers ---------- */
 
 function isWhite(p) { return p === p.toUpperCase(); }
 function isBlack(p) { return p === p.toLowerCase(); }
 function hasPiece(x, y){
-  return board[y][x] !== ""
+  return board[y][x] !== "";
+}
+function isPrimitive(p){
+  if (p.length <= 1) return true;
+  return false;
 }
 
 function belongsToCurrentPlayer(p) {
@@ -122,14 +137,16 @@ function updateSeenSquares(){
     }
   }
 
-
   for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {
       if (hasPiece(x, y)){
-        if (isWhite(board[y][x])){
-          console.log("white")
-        } else {
-          console.log("black")
+        const localMoves = getValidMoves({x, y});      
+        for (const m of localMoves){
+          if (isWhite(board[y][x])){
+            whiteSeenSquares[m.y][m.x] = true;
+          } else {
+            blackSeenSquares[m.y][m.x] = true;
+          }
         }
       }
     }
@@ -159,12 +176,10 @@ function combinesWithKing(from, to){
 
 function containsKing(p){
   if (p.includes('k') || p.includes('K')){
-    console.log("has king")
     return true
   }
   return false
 }
-
 
 /* ---------- Drawing ---------- */
 
@@ -188,28 +203,17 @@ function drawBoard() {
 function drawPiece(x, y, p) {
   if (!p) return;
 
-  const img = sprites[p];
-
-  //if no image yet, just display the string
-  if (!img){
-    ctx.fillStyle = isWhite(p) ? "#fff" : "#000";
-    const size  = (48 / p.length).toString()
-    ctx.font = size + "px serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    ctx.fillText(
-      p,
-      x * TILE + TILE / 2,
-      y * TILE + TILE / 2
-    );
+  //grab the images for each letter
+  const imgs = [];
+  for (const char of p){
+    imgs.push(sprites[char])
   }
 
-  //render the image if we have it
-  else {
-    const pad = TILE * 0.1;
+  //render all the images
+  const pad = TILE * 0.1;
+  for (const image of imgs){
     ctx.drawImage(
-      img,
+      image,
       x * TILE + pad,
       y * TILE + pad,
       TILE - pad * 2,
@@ -223,6 +227,23 @@ function drawMoveDots() {
 
   ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
 
+  // to view whiteSeenSquares
+  // for (let y = 0; y < SIZE; y++) {
+  //   for (let x = 0; x < SIZE; x++) {
+  //     if (whiteSeenSquares[y][x] === true){
+  //       ctx.beginPath();
+  //       ctx.arc(
+  //         x * TILE + TILE / 2,
+  //         y * TILE + TILE / 2,
+  //         TILE * 0.12,
+  //         0,
+  //         Math.PI * 2
+  //       );
+  //       ctx.fill();
+  //     }
+  //   }
+  // }
+
   for (const m of validMoves) {
     ctx.beginPath();
     ctx.arc(
@@ -235,7 +256,6 @@ function drawMoveDots() {
     ctx.fill();
   }
 }
-
 
 /* ---------- Movement Logic ---------- */
 
@@ -292,6 +312,7 @@ function isLegalMove(from, to) {
 
       case "k":
         if (absX <= 1 && absY <= 1 && clearPath(from, to, p)) return true;
+        if (isCastlingLegal(from, to)) return true;
         break;
     }
   }
@@ -300,8 +321,6 @@ function isLegalMove(from, to) {
   return false;
 }
 
-//is path clear from one square to another square for which color, and does 
-//the piece in question contain a king
 function clearPath(from, to, p) {
   const dx = Math.sign(to.x - from.x);
   const dy = Math.sign(to.y - from.y);
@@ -311,19 +330,101 @@ function clearPath(from, to, p) {
 
   while (x !== to.x || y !== to.y) {
     if (board[y][x]) return false;
-
-    const hasKing = containsKing(p);
-    if (hasKing){
-
-    }
     x += dx;
     y += dy;
   }
   return true;
 }
 
-function isSquareAttacked(square, who){
+//from will always be a king. nothing else is guaranteed
+function isCastlingLegal(from, to){
 
+  //ensure king hasn't moved
+  const kingColor = isWhite(board[from.y][from.x]) === true ? "white" : "black"
+  if (kingColor === "white" && whiteKingMoved === true) return false;
+  if (kingColor === "black" && blackKingMoved === true) return false;
+
+  //ensure the 'to' location is valid for castling
+  if (Math.abs(from.x-to.x) !== 2)return false;
+  if (from.y-to.y !== 0)return false;
+
+  //ensure rook hasn't moved
+  const dir = from.x > to.x ? "left" : "right" 
+  if (kingColor === "white"){
+    if (dir === "left" && whiteARookMoved === true) return false;
+    if (dir === "right" && whiteHRookMoved === true) return false;
+  }
+  if (kingColor === "black"){
+    if (dir === "left" && blackARookMoved === true) return false;
+    if (dir === "right" && blackHRookMoved === true) return false;
+  }
+
+  //ensure path is clear
+  if (kingColor === "white"){
+    if (dir === "left"){
+      if (blackSeenSquares[7][3] === true || blackSeenSquares[7][2] === true) return false;
+    }
+    if (dir === "right"){
+      if (blackSeenSquares[7][5] === true || blackSeenSquares[7][6] === true) return false;
+    }
+  }
+  if (kingColor === "black"){
+    if (dir === "left"){
+      if (whiteSeenSquares[0][3] === true || whiteSeenSquares[0][2] === true) return false;
+    }
+    if (dir === "right"){
+      if (whiteSeenSquares[0][5] === true || whiteSeenSquares[0][6] === true) return false;
+    }
+  }
+
+  return true;
+}
+
+//this method only called once the move is confirmed legal
+//so all we have to do is confirm the moving piece is a king
+//and that it is moving more than 1 square
+function isCastling(from, to){
+  let piece = board[from.y][from.x];
+  if (piece.toUpperCase() !== "K")return false;
+  if (Math.abs(from.x-to.x) > 1)return true;
+  return false;
+}
+
+function castles(from, to){
+  const kingColor = board[from.y][from.x] === "K" ? "white" : "black"
+  const king = board[from.y][from.x];
+  const dir = (from.x > to.x) ? -1 : 1;
+
+  board[from.y][from.x+(2*dir)] = king;
+
+  board[from.y][from.x+dir] = kingColor === "white" ? "R" : "r"
+  board[from.y][from.x] = "";
+  if (dir === -1){
+    board[from.y][0] = "";
+  } else {
+    board[from.y][7] = ""
+  }
+
+  board[from.y][from.x] = ""
+  if (kingColor === "white") whiteCastled = true;
+  if (kingColor === "black") blackCastled = true;
+}
+
+function updateCastlingDependencies(from, to){
+  if ((from.x === 0 && from.y === 0) || (to.x === 0 && to.y === 0)) blackARookMoved = true;
+  if ((from.x === 7 && from.y === 0) || (to.x === 7 && to.y === 0)) blackHRookMoved = true;
+  if ((from.x === 0 && from.y === 7) || (to.x === 0 && to.y === 7)) whiteARookMoved = true;
+  if ((from.x === 7 && from.y === 7) || (to.x === 7 && to.y === 7)) whiteHRookMoved = true;
+  if ((from.x === 4 && from.y === 0) || (to.x === 4 && to.y === 0)) blackKingMoved = true;
+  if ((from.x === 4 && from.y === 7) || (to.x === 4 && to.y === 7)) whiteKingMoved = true;
+}
+function printCastlingDependencies(){
+  console.log("black A rook moved: " +blackARookMoved)
+  console.log("black H rook moved: " +blackHRookMoved)
+  console.log("white A rook moved: " +whiteARookMoved)
+  console.log("white H rook moved: " +whiteHRookMoved)
+  console.log("black king moved: " +blackKingMoved)
+  console.log("white king moved: " +whiteKingMoved)
 }
 
 /* ---------- Input ---------- */
@@ -337,12 +438,18 @@ canvas.addEventListener("click", e => {
 
   if (selected) {
     if (isLegalMove(selected, { x, y })) {
-      if (belongsToCurrentPlayer(board[y][x])){
-        board[y][x] += board[selected.y][selected.x];
+      if (isCastling(selected, { x, y }) === true){
+        castles(selected, {x, y});
       } else {
-        board[y][x] = board[selected.y][selected.x];
+        if (belongsToCurrentPlayer(board[y][x])){
+          board[y][x] += board[selected.y][selected.x];
+        } else {
+          board[y][x] = board[selected.y][selected.x];
+        }
+        board[selected.y][selected.x] = "";
       }
-      board[selected.y][selected.x] = "";
+      updateCastlingDependencies(selected, {x, y})
+      //printCastlingDependencies()
       updateSeenSquares();
       currentPlayer = currentPlayer === "white" ? "black" : "white";
     }
