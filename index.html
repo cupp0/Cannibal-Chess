@@ -50,17 +50,53 @@ const board = [
   ["R","N","B","Q","K","B","N","R"]
 ];
 
+const whiteSeenSquares = []
+const blackSeenSquares = []
+
 /* ---------- Helpers ---------- */
 
 function isWhite(p) { return p === p.toUpperCase(); }
 function isBlack(p) { return p === p.toLowerCase(); }
+function hasPiece(x, y){
+  return board[y][x] !== ""
+}
 
 function belongsToCurrentPlayer(p) {
   if (!p) return false;
   return currentPlayer === "white" ? isWhite(p) : isBlack(p);
 }
 
+function belongsToOtherPlayer(p) {
+  if (!p) return false;
+  return currentPlayer === "white" ? isBlack(p) : isWhite(p);
+}
 
+function updateSeenSquares(){
+
+  //reset both lists
+  for (let y = 0; y < SIZE; y++) {
+    whiteSeenSquares[y] = []
+    blackSeenSquares[y] = []
+
+    for (let x = 0; x < SIZE; x++) {
+      whiteSeenSquares[y][x] = false;
+      blackSeenSquares[y][x] = false;
+    }
+  }
+
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      if (hasPiece(x, y)){
+        if (isWhite(board[y][x])){
+          console.log("white")
+        } else {
+          console.log("black")
+        }
+      }
+    }
+  }
+}
 
 function getValidMoves(from) {
   const moves = [];
@@ -73,6 +109,22 @@ function getValidMoves(from) {
     }
   }
   return moves;
+}
+
+//return true iff both arg squares contain pieces of the same color and one of the squares has a king
+function combinesWithKing(from, to){
+  if (!hasPiece(from.x, from.y) || !hasPiece(to.x, to.y)) return false;
+  if (isWhite(board[from.y][from.x]) !== isWhite(board[to.y][to.x])) return false;
+  if (containsKing(board[from.y][from.x]) || containsKing(board[to.y][to.x])) return true;
+  return false;
+}
+
+function containsKing(p){
+  if (p.includes('k') || p.includes('K')){
+    console.log("has king")
+    return true
+  }
+  return false
 }
 
 
@@ -142,6 +194,9 @@ function isLegalMove(from, to) {
 
   if (from.x === to.x && from.y === to.y) return false;
 
+  //don't allow combining with king
+  if (combinesWithKing(from, to)) return false;
+
   const dx = to.x - from.x;
   const dy = to.y - from.y;
 
@@ -162,18 +217,18 @@ function isLegalMove(from, to) {
 
       case "r":
         if (dx !== 0 && dy !== 0) break;
-        if (clearPath(from, to)) return true;
+        if (clearPath(from, to, p)) return true;
         break;
 
       case "b":
         if (absX !== absY) break;
-        if (clearPath(from, to)) return true;
+        if (clearPath(from, to, p)) return true;
         break;
 
 
       case "q":
         if (!(dx === 0 || dy === 0 || absX === absY)) break;
-        if (clearPath(from, to)) return true;
+        if (clearPath(from, to, p)) return true;
         break;
 
       case "n":
@@ -181,7 +236,7 @@ function isLegalMove(from, to) {
         break;
 
       case "k":
-        if (absX <= 1 && absY <= 1) return true;
+        if (absX <= 1 && absY <= 1 && clearPath(from, to, p)) return true;
         break;
     }
   }
@@ -190,7 +245,9 @@ function isLegalMove(from, to) {
   return false;
 }
 
-function clearPath(from, to) {
+//is path clear from one square to another square for which color, and does 
+//the piece in question contain a king
+function clearPath(from, to, p) {
   const dx = Math.sign(to.x - from.x);
   const dy = Math.sign(to.y - from.y);
 
@@ -199,10 +256,19 @@ function clearPath(from, to) {
 
   while (x !== to.x || y !== to.y) {
     if (board[y][x]) return false;
+
+    const hasKing = containsKing(p);
+    if (hasKing){
+
+    }
     x += dx;
     y += dy;
   }
   return true;
+}
+
+function isSquareAttacked(square, who){
+
 }
 
 /* ---------- Input ---------- */
@@ -222,6 +288,7 @@ canvas.addEventListener("click", e => {
         board[y][x] = board[selected.y][selected.x];
       }
       board[selected.y][selected.x] = "";
+      updateSeenSquares();
       currentPlayer = currentPlayer === "white" ? "black" : "white";
     }
     selected = null;
