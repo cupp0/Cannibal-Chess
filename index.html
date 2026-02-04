@@ -83,6 +83,9 @@ let blackARookMoved = false;
 let whiteHRookMoved = false;
 let blackHRookMoved = false;
 
+let waitingForPromotionSelection = false;
+let promotionSquare = [0,0]
+
 let validMoves = [];
 
 /* ---------- Board ---------- */
@@ -419,15 +422,6 @@ function updateCastlingDependencies(from, to){
   if ((from.x === 4 && from.y === 7) || (to.x === 4 && to.y === 7)) whiteKingMoved = true;
 }
 
-function printCastlingDependencies(){
-  console.log("black A rook moved: " +blackARookMoved)
-  console.log("black H rook moved: " +blackHRookMoved)
-  console.log("white A rook moved: " +whiteARookMoved)
-  console.log("white H rook moved: " +whiteHRookMoved)
-  console.log("black king moved: " +blackKingMoved)
-  console.log("white king moved: " +whiteKingMoved)
-}
-
 function isPawnPromoting(from, to){
   let piece = board[from.y][from.x];
   if (piece.toUpperCase() !== "P") return false;
@@ -437,13 +431,26 @@ function isPawnPromoting(from, to){
   if (pawnColor === "black" && to.y === 7)return true;
 }
 
-function promote(from, to){
-  let piece = board[from.y][from.x];
-  if (piece.toUpperCase() !== "P") return false;
-  const pawnColor = piece === "P" ? "white" : "black"
-  
-  if (pawnColor === "white" && to.y === 0){board[to.y][to.x] = "Q"}
-  if (pawnColor === "black" && to.y === 7){board[to.y][to.x] = "q"}
+function beginPromotion(from, to){
+  promotionSquare[0] = to.x;
+  promotionSquare[1] = to.y;
+  waitingForPromotionSelection = true;
+}
+
+function completePromotion(p){
+  if (currentPlayer === "white"){
+    board[promotionSquare[1]][promotionSquare[0]] = p.toUpperCase();
+  } else {
+    if (currentPlayer === "white")board[promotionSquare[1]][promotionSquare[0]] = p;
+  }
+  waitingForPromotionSelection = false;
+
+  board[selected.y][selected.x] = ""
+  updateCastlingDependencies(selected, promotionSquare)
+  updateSeenSquares();
+  currentPlayer = currentPlayer === "white" ? "black" : "white";
+  selected = null;
+  validMoves = [];
 }
 
 /* ---------- Input ---------- */
@@ -457,6 +464,7 @@ canvas.addEventListener("click", e => {
 
   if (selected) {
     if (isLegalMove(selected, { x, y })) {
+      if (waitingForPromotionSelection === true)return;
 
       //castles
       if (isCastling(selected, { x, y }) === true){
@@ -470,7 +478,8 @@ canvas.addEventListener("click", e => {
       
       //promotes
       else if (isPawnPromoting(selected, {x, y})){
-        promote(selected, {x, y})
+        beginPromotion(selected, {x, y}); 
+        return;
       }
 
       //normal move
@@ -492,6 +501,14 @@ canvas.addEventListener("click", e => {
     validMoves = getValidMoves(selected);
   }
 
+});
+
+window.addEventListener("keydown", e => {
+  if (waitingForPromotionSelection === true){
+    if(e.key === "q" || e.key === "r" || e.key === "n" || e.key === "b"){
+      completePromotion(e.key)
+    }
+  }
 });
 
 /* ---------- Loop ---------- */
