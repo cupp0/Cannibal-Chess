@@ -32,6 +32,7 @@ const ctx = canvas.getContext("2d");
 
 const SIZE = 8;
 const TILE = canvas.width / SIZE;
+let boardOrientation = 1;
 
 const sprites = {};
 let spritesLoaded = false;
@@ -51,27 +52,9 @@ const pieceMap = {
   k: "black-king"
 };
 
-function loadSprites() {
-  const entries = Object.entries(pieceMap);
-  let loaded = 0;
-
-  for (const [key, name] of entries) {
-    const img = new Image();
-    img.src = `assets/pieces/${name}.png`;
-    img.onload = () => {
-      loaded++;
-      if (loaded === entries.length) {
-        spritesLoaded = true;
-      }
-    };
-    sprites[key] = img;
-  }
-}
-
-loadSprites();
-
 let currentPlayer = "white";
 let selected = null;
+let validMoves = [];
 
 //clock
 let whiteTime = 5 * 60; // seconds
@@ -79,7 +62,7 @@ let blackTime = 5 * 60;
 let activeClock = "white";
 let lastTick = performance.now();
 
-//castling stuff
+//castling, promotion, en passant stuff
 let whiteCastled = false;
 let blackCastled = false;
 let whiteKingMoved = false;
@@ -88,12 +71,9 @@ let whiteARookMoved = false;
 let blackARookMoved = false;
 let whiteHRookMoved = false;
 let blackHRookMoved = false;
-
 let waitingForPromotionSelection = false;
 let promotionSquare = [0,0]
 let enPassantTarget = [-1, 0]
-
-let validMoves = [];
 
 /* ---------- Board ---------- */
 
@@ -111,6 +91,24 @@ const board = [
 const whiteSeenSquares = []
 const blackSeenSquares = []
 updateSeenSquares()
+loadSprites();
+
+function loadSprites() {
+  const entries = Object.entries(pieceMap);
+  let loaded = 0;
+
+  for (const [key, name] of entries) {
+    const img = new Image();
+    img.src = `assets/pieces/${name}.png`;
+    img.onload = () => {
+      loaded++;
+      if (loaded === entries.length) {
+        spritesLoaded = true;
+      }
+    };
+    sprites[key] = img;
+  }
+}
 
 /* ---------- Helpers ---------- */
 
@@ -193,18 +191,29 @@ function containsKing(p){
 
 /* ---------- Drawing ---------- */
 
+function boardToScreen(x, y) {
+  if (boardOrientation === 1) {
+    return { sx: x, sy: y };
+  }
+  return {
+    sx: 7 - x,
+    sy: 7 - y
+  };
+}
+
 function drawBoard() {
   for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {
+      const { sx, sy } = boardToScreen(x, y);
       ctx.fillStyle = (x + y) % 2 === 0 ? "#f0d9b5" : "#b58863";
-      ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+      ctx.fillRect(sx * TILE, sy * TILE, TILE, TILE);
 
       if (selected && selected.x === x && selected.y === y) {
         ctx.strokeStyle = "yellow";
         ctx.lineWidth = 4;
-        ctx.strokeRect(x * TILE + 2, y * TILE + 2, TILE - 4, TILE - 4);
+        ctx.strokeRect(sx * TILE + 2, sy * TILE + 2, TILE - 4, TILE - 4);
       }
-
+      
       drawPiece(x, y, board[y][x]);
     }
   }
@@ -213,6 +222,8 @@ function drawBoard() {
 function drawPiece(x, y, p) {
   if (!p) return;
 
+  const { sx, sy } = boardToScreen(x, y);
+
   //grab the images for each letter
   const imgs = [];
   for (const char of p){
@@ -220,12 +231,14 @@ function drawPiece(x, y, p) {
   }
 
   //render all the images
+  
+  console.log(x, y)
   const pad = TILE * 0.1;
   for (const image of imgs){
     ctx.drawImage(
       image,
-      x * TILE + pad,
-      y * TILE + pad,
+      sx * TILE + pad,
+      sy * TILE + pad,
       TILE - pad * 2,
       TILE - pad * 2
     );  
@@ -269,11 +282,13 @@ function drawMoveDots() {
   //   }
   // }
 
+
   for (const m of validMoves) {
+    const { sx, sy } = boardToScreen(m.x, m.y)
     ctx.beginPath();
     ctx.arc(
-      m.x * TILE + TILE / 2,
-      m.y * TILE + TILE / 2,
+      sx * TILE + TILE / 2,
+      sy * TILE + TILE / 2,
       TILE * 0.12,
       0,
       Math.PI * 2
@@ -291,6 +306,7 @@ function inBounds(x, y) {
 function isLegalMove(from, to) {
   const p = board[from.y][from.x];
   const target = board[to.y][to.x];
+  const pieceColor = isWhite(p) ? "white" : "black"
 
   if (from.x === to.x && from.y === to.y) return false;
 
@@ -310,7 +326,7 @@ function isLegalMove(from, to) {
       case "p":
         if (!target && dx === 0 && dy === dir) return true;
         if (!target && dx === 0 && dy === dir * 2 &&
-            ((isWhite(p) && from.y === 6) || (isBlack(p) && from.y === 1)))
+            ((pieceColor == "white" && from.y === 6) || (pieceColor == "black" && from.y === 1)))
           return true;
         if (absX === 1 && dy === dir){ 
           if (target) return true;
@@ -339,6 +355,8 @@ function isLegalMove(from, to) {
         break;
 
       case "k":
+        if (pieceColor === "white" && blackSeenSquares[to.y][to.x] == true)return false;
+        if (pieceColor === "black" && whiteSeenSquares[to.y][to.x] == true)return false;
         if (absX <= 1 && absY <= 1 && clearPath(from, to, p)) return true;
         if (isCastlingLegal(from, to)) return true;
         break;
@@ -456,7 +474,6 @@ function updateEnPassantTarget(from, to){
     enPassantTarget[0] = -1;
     return;
   }
-  console.log("here")
   const pawnColor = piece === "P" ? "white" : "black"
 
   let leftNeighbor = "z"
@@ -550,10 +567,11 @@ function completePromotion(p){
 /* ---------- Input ---------- */
 
 canvas.addEventListener("click", e => {
-  //console.log(enPassantTarget)
   const rect = canvas.getBoundingClientRect();
-  const x = Math.floor((e.clientX - rect.left) / TILE);
-  const y = Math.floor((e.clientY - rect.top) / TILE);
+
+  const { sx, sy } = boardToScreen(Math.floor((e.clientX - rect.left) / TILE), Math.floor((e.clientY - rect.top) / TILE));
+  const x = sx
+  const y = sy
 
   if (!inBounds(x, y)) return;
 
@@ -606,6 +624,9 @@ canvas.addEventListener("click", e => {
 });
 
 window.addEventListener("keydown", e => {
+  if (e.key === "f"){
+    boardOrientation *= -1
+  }
   if (waitingForPromotionSelection === true){
     if(e.key === "q" || e.key === "r" || e.key === "n" || e.key === "b"){
       completePromotion(e.key)
