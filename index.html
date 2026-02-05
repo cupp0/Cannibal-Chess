@@ -16,7 +16,7 @@
     }
 
     canvas {
-      border: 4px solid #555;
+      border: 10px solid #555;
       background: #111;
       cursor: pointer;
     }
@@ -72,6 +72,12 @@ loadSprites();
 
 let currentPlayer = "white";
 let selected = null;
+
+//clock
+let whiteTime = 5 * 60; // seconds
+let blackTime = 5 * 60;
+let activeClock = "white";
+let lastTick = performance.now();
 
 //castling stuff
 let whiteCastled = false;
@@ -224,6 +230,21 @@ function drawPiece(x, y, p) {
       TILE - pad * 2
     );  
   }
+}
+
+function formatTime(t) {
+  const m = Math.floor(t / 60);
+  const s = Math.floor(t % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function drawClocks() {
+  ctx.fillStyle = "white";
+  ctx.font = "20px sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(`White ${formatTime(whiteTime)}`, 10, 16);
+  ctx.textAlign = "right";
+  ctx.fillText(`Black ${formatTime(blackTime)}`, canvas.width -10, 16);
 }
 
 function drawMoveDots() {
@@ -598,8 +619,23 @@ function loop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBoard();
   drawMoveDots();
+  drawClocks();
   requestAnimationFrame(loop);
+  updateClocks();
 }
+
+function updateClocks() {
+  const now = performance.now();
+  const dt = (now - lastTick) / 1000;
+  lastTick = now;
+
+  if (currentPlayer === "white") {
+    whiteTime = Math.max(0, whiteTime - dt);
+  } else {
+    blackTime = Math.max(0, blackTime - dt);
+  }
+}
+
 
 loop();
 </script>
