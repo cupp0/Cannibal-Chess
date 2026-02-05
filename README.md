@@ -8,9 +8,8 @@ In **Cannibal Chess**, you can capture your own pieces. If you do, the resulting
 - No **check/checkmate** - eat the King.
 
 **T0d0**
-- castling, en passant, promotions
-- art
 - timer
+- art
 - other UI stuff (menu, endscreen, flip board button)
 - online matchmaking (maybe Omar makes a template?)
 
