@@ -85,6 +85,7 @@ let blackHRookMoved = false;
 
 let waitingForPromotionSelection = false;
 let promotionSquare = [0,0]
+let enPassantTarget = [-1, 0]
 
 let validMoves = [];
 
@@ -290,7 +291,10 @@ function isLegalMove(from, to) {
         if (!target && dx === 0 && dy === dir * 2 &&
             ((isWhite(p) && from.y === 6) || (isBlack(p) && from.y === 1)))
           return true;
-        if (target && absX === 1 && dy === dir) return true;
+        if (absX === 1 && dy === dir){ 
+          if (target) return true;
+          if (enPassantTarget[0] === to.x && enPassantTarget[1] === to.y) return true;
+        }
         break;
 
       case "r":
@@ -422,6 +426,75 @@ function updateCastlingDependencies(from, to){
   if ((from.x === 4 && from.y === 7) || (to.x === 4 && to.y === 7)) whiteKingMoved = true;
 }
 
+//called after each succesful move
+function updateEnPassantTarget(from, to){
+  let piece = board[to.y][to.x];
+
+  //confirm we are moving a pawn
+  if (piece.toUpperCase() !== "P"){
+    enPassantTarget[0] = -1;
+    return;
+  }
+  console.log("here")
+  const pawnColor = piece === "P" ? "white" : "black"
+
+  let leftNeighbor = "z"
+  let rightNeighbor = "z"
+  const leftNeighborValid = to.x > 0
+  const rightNeighborValid = to.x < 7
+  
+  if (leftNeighborValid === true) leftNeighbor = board[to.y][to.x-1];
+  if (rightNeighborValid === true) rightNeighbor = board[to.y][to.x-1];
+
+  if (pawnColor === "white"){
+    //confirm pawn moving from starting square to two forward
+    if (from.y !== 6 || to.y !== 4){
+      enPassantTarget[0] = -1;
+      return;
+    }
+
+    //confirm neighbors at destination are enemy pawns
+    if (leftNeighbor === "p" || rightNeighbor === "p"){
+      enPassantTarget[0] = from.x;
+      enPassantTarget[1] = (from.y+to.y)/2;
+      return;
+    }
+  }
+
+  if (pawnColor === "black"){
+    if (from.y !== 1 || to.y !== 3){
+      enPassantTarget[0] = -1;
+      return;
+    }
+
+    if (leftNeighbor === "P" || rightNeighbor === "P"){
+      enPassantTarget[0] = from.x;
+      enPassantTarget[1] = (from.y+to.y)/2;
+      return;
+    }
+  }
+
+}
+
+//move is known to be legal
+function isEnPassant(from, to){
+  if (enPassantTarget[0] === -1)return false;
+  if (to.x !== enPassantTarget[0] || to.y !== enPassantTarget[1])return false;
+  if (board[from.y][from.x].toUpperCase() !== "P")return false;
+  return true;
+}
+
+//move is known to be a legal en passant
+function executeEnPassant(from, to){
+  board[to.y][to.x] = board[selected.y][selected.x]
+  board[selected.y][selected.x] = ""
+  board[from.y][to.x] = ""
+  updateSeenSquares();
+  currentPlayer = currentPlayer === "white" ? "black" : "white";
+  selected = null;
+  validMoves = [];
+}
+
 function isPawnPromoting(from, to){
   let piece = board[from.y][from.x];
   if (piece.toUpperCase() !== "P") return false;
@@ -456,6 +529,7 @@ function completePromotion(p){
 /* ---------- Input ---------- */
 
 canvas.addEventListener("click", e => {
+  //console.log(enPassantTarget)
   const rect = canvas.getBoundingClientRect();
   const x = Math.floor((e.clientX - rect.left) / TILE);
   const y = Math.floor((e.clientY - rect.top) / TILE);
@@ -482,6 +556,12 @@ canvas.addEventListener("click", e => {
         return;
       }
 
+      //en passant
+      else if (isEnPassant(selected, {x, y})){
+        executeEnPassant(selected, {x, y})
+        return;
+      }
+
       //normal move
       else { board[y][x] = board[selected.y][selected.x] }
       
@@ -489,6 +569,7 @@ canvas.addEventListener("click", e => {
       board[selected.y][selected.x] = "";
 
       updateCastlingDependencies(selected, {x, y})
+      updateEnPassantTarget(selected, {x, y})
       //printCastlingDependencies()
       updateSeenSquares();
       currentPlayer = currentPlayer === "white" ? "black" : "white";
