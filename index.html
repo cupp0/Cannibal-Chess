@@ -27,7 +27,7 @@
 <canvas id="board" width="480" height="480"></canvas>
 
 <script>
-const canvas = document.getElementById("board");
+  const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 const SIZE = 8;
 const TILE = canvas.width / SIZE;
@@ -47,41 +47,561 @@ const pieceMap = {
   k: "black-king"
 };
 
-//state
-let boardOrientation = 1;
-let currentPlayer = "white";
-let selected = null;
-let validMoves = [];
-let whiteTime = 5 * 60; // seconds
-let blackTime = 5 * 60;
-let activeClock = "white";
-let lastTick = performance.now();
-let whiteCastled = false;
-let blackCastled = false;
-let whiteKingMoved = false;
-let blackKingMoved = false;
-let whiteARookMoved = false;
-let blackARookMoved = false;
-let whiteHRookMoved = false;
-let blackHRookMoved = false;
-let waitingForPromotionSelection = false;
-let promotionSquare = [0,0]
-let enPassantTarget = [-1, 0]
-const whiteSeenSquares = []
-const blackSeenSquares = []
+
+class Piece {
+  label;
+  constructor(x, y, color) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.hasMoved = false;
+  }    
+
+  render(){
+    for (const char of this.label){
+      const image = sprites[char]
+      const pad = TILE * 0.1;
+      ctx.drawImage(
+        image,
+        this.x * TILE + pad,
+        this.y * TILE + pad,
+        TILE - pad * 2,
+        TILE - pad * 2
+      );  
+    }
+  }
+
+  move(pos){
+    game.board[this.y][this.x] = null;
+    this.x = pos.x; this.y = pos.y;
+    game.board[this.y][this.x] = this;
+  }
+
+  setLabel(l){ this.label = this.color === "black" ? l : l.toUpperCase();}
+
+  getLabel(){ return this.label;}
+
+  getColor(){
+    return this.color;
+  }
+
+  getPieces(){
+    return this;
+  }
+
+  static flatten(pieces){
+    const ps = []
+    for (const p of pieces){
+      if (p instanceof Cannibal){
+        for (const pees of Piece.flatten(p.pieces)){
+          ps.push(pees)
+        }
+      } else {
+        ps.push(p)
+      }
+    }
+    return ps;
+  }
+  static isFriendly(p1, p2){
+    return p1.getColor() === p2.getColor();
+  }
+
+  isFriendlyKing(k){
+    return (k instanceof King && this.getColor() === k.getColor())
+  }
+
+  getValidMoves(board, isPrimary) {
+    const moves = [];
+
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        if (this.isMoveLegal(board, { x, y }, isPrimary)) {
+          moves.push({ x, y });
+        }
+      }
+    }
+    return moves;
+  }
+
+}
+
+class Pawn extends Piece{
+  isPassing = false;
+  dir;
+
+  constructor(x, y, color){
+    super(x, y, color)
+    this.setLabel("p")
+    this.dir = this.color === "white" ? -1 : 1
+  }
+
+  isMoveLegal(board, to, isPrimary){
+    const dx = to.x - this.x
+    const dy = to.y - this.y
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 2)return false;
+    if (Math.sign(dy) !== Math.sign(this.dir)) return false;
+    if (Math.abs(dx) === 1 && Math.abs(dy) === 2)return false;
+
+    const target = board[to.y][to.x];
+    if (this.isFriendlyKing(target))return false;
+    if (target && dx === 0) return false;
+    if ((this.hasMoved === true) && Math.abs(dy) === 2) return false;
+
+
+    //capturing/eating
+    if (Math.abs(dx) === 1 && dy === this.dir){
+      if(!target){
+        if (!this.canEnPassant(board, to)) return false;
+      } 
+    }
+
+    if (!isPrimary) return true;
+    if (game.resultsInEnemyCheck(this, to)) return false;    
+    return true;
+  }
+
+  canEnPassant(board, to){
+    const neighbor = board[this.y][to.x]
+    if (neighbor && neighbor.isPassing){
+      return true;
+    }
+  }
+}
+
+class Knight extends Piece{
+  constructor(x, y, color){
+    super(x, y, color)
+    this.setLabel("n")
+  }
+
+  isMoveLegal(board, to, isPrimary){
+    const target = board[to.y][to.x];
+    if (this.isFriendlyKing(target))return false;
+
+    const absX = Math.abs(to.x-this.x);
+    const absY = Math.abs(to.y-this.y);
+    if (!((absX === 1 && absY === 2) || (absX === 2 && absY === 1))) return false;
+
+    if (!isPrimary) return true;
+    if (game.resultsInEnemyCheck(this, to)) return false;    
+    return true;
+  }
+
+}
+
+class Bishop extends Piece{
+  constructor(x, y, color){
+    super(x, y, color)
+    this.setLabel("b")
+  }
+
+  isMoveLegal(board, to, isPrimary){
+    const target = board[to.y][to.x];    
+    if (this.isFriendlyKing(target))return false;
+
+    const absX = Math.abs(to.x-this.x);
+    const absY = Math.abs(to.y-this.y);
+    if (absX !== absY) return false;
+    if (!game.clearPath(board, {x: this.x, y: this.y}, to)) return false;
+
+    if (!isPrimary) return true;
+    if (game.resultsInEnemyCheck(this, to)) return false;    
+    return true; 
+  }
+}
+
+class Rook extends Piece{
+  constructor(x, y, color){
+    super(x, y, color)
+    this.setLabel("r")
+  }
+
+  isMoveLegal(board, to, isPrimary){
+    const target = board[to.y][to.x];    
+    if (this.isFriendlyKing(target))return false;
+
+    const dx = to.x-this.x;
+    const dy = to.y-this.y;
+    if (dx !== 0 && dy !== 0) return false;
+    if (!game.clearPath(board, {x: this.x, y: this.y}, to)) return false;
+    
+    if (!isPrimary) return true;
+    if (game.resultsInEnemyCheck(this, to)) return false;
+    return true;
+  }
+}
+
+class Queen extends Piece{
+  constructor(x, y, color){
+    super(x, y, color)
+    this.setLabel("q")
+  }
+
+  isMoveLegal(board, to, isPrimary){
+    const target = board[to.y][to.x];    
+    if (this.isFriendlyKing(target))return false;
+
+    const absX = Math.abs(to.x-this.x);
+    const absY = Math.abs(to.y-this.y);
+    const dx = to.x-this.x;
+    const dy = to.y-this.y;
+
+    if ((absX !== absY) && (dx !== 0 && dy !== 0)) return false;
+    if (!game.clearPath(board, {x: this.x, y: this.y}, to)) return false;
+    
+    if (!isPrimary) return true;
+    if (game.resultsInEnemyCheck(this, to)) return false;
+    return true; 
+  }
+}
+
+class King extends Piece{
+  constructor(x, y, color){
+    super(x, y, color)
+    this.setLabel("k")
+  }
+
+  isMoveLegal(board, to, isPrimary){
+    const toPiece = board[to.y][to.x];
+
+    if (toPiece && Piece.isFriendly(this, toPiece)) return false;
+    const dx = Math.abs(to.x-this.x);
+    const dy = Math.abs(to.y-this.y);
+
+    if (dy > 1) return false;
+    if (dx > 1){
+      if (!this.canCastle(board, to, isPrimary)) return false;
+    }
+
+    if (!isPrimary) return true;
+    if (game.resultsInEnemyCheck(this, to)) return false;
+    return true; 
+  }
+
+  canCastle(board, to, isPrimary){
+    const dx = to.x-this.x;
+    const dy = to.y-this.y; 
+    if (Math.abs(dx) !== 2 || dy !== 0) return false;
+    if (this.hasMoved) return false;
+    const potentialCastler = dx > 0 ? board[this.y][7] : board[this.y][0]
+    if (!potentialCastler) return false;
+    if (!(potentialCastler instanceof Rook)) return false;
+    if (potentialCastler.hasMoved) return false;
+    if (!game.clearPath(board, {x: this.x, y: this.y}, {x: potentialCastler.x, y: potentialCastler.y})) return false;
+    const oppColor = this.getColor() === "white" ? "black" : "white";
+    const castleDir = Math.sign(dx);
+
+    if (!isPrimary) return true;
+    if (game.playerSees(oppColor, board, {x: this.x+castleDir, y: this.y})) return false;
+    if (game.playerSees(oppColor, board, {x: this.x+(2*castleDir), y: this.y})) return false;
+    console.log(this.getColor()+" can castle")
+    return true;
+  }
+}
+
+class Cannibal extends Piece{
+  pieces;
+
+  constructor(x, y, pieces, color) {
+    super(x, y, color)
+    this.pieces = Piece.flatten(pieces) // store pieces in a flat array
+    this.move({x: x, y: y})
+    this.label = this.initLabel()
+    this.hasMoved = true;
+  } 
+
+  move(to){
+    this.x = to.x;
+    this.y = to.y;
+    for (const p of this.pieces){
+      p.move({x: this.x, y: this.y})
+    }
+    game.board[this.y][this.x] = this;
+  }
+
+  initLabel(){
+    let label = ""
+    for (const p of this.pieces){
+      label += p.getLabel()
+    }
+    return label;
+  }
+
+  getPieces(){
+    return this.pieces;
+  }
+
+  isMoveLegal(board, to, isPrimary){
+    for (const p of this.pieces){
+      if (p.isMoveLegal(board, to, isPrimary))return true;
+    }
+    return false;
+  }
+
+}
+
+class Game {
+  constructor(){
+    this.initBoard();  
+    this.boardOrientation = 1,
+    this.currentPlayer = "white",
+    this.selected = null,
+    this.validMoves = [],
+    this.whiteTime = 5 * 60,
+    this.blackTime = 5 * 60,
+    this.lastTick = performance.now(),
+    this.waitingForPromotionSelection = false,
+    this.whiteVision = [],                    
+    this.blackVision = []             
+  }
+
+  //~ ~ ~ ~ ~ ~ ~ ~ ~ INIT ~ ~ ~ ~ ~ ~ ~ ~ ~\\
+
+  createPieceByStartSquare(x, y){
+    const color = y < 4 ? "black" : "white"
+    if (y > 1 && y < 6) return null;
+    if (y === 1 || y === 6) return new Pawn(x, y, color)
+    if (x === 0 || x === 7) return new Rook(x, y, color)
+    if (x === 1 || x === 6) return new Knight(x, y, color)
+    if (x === 2 || x === 5) return new Bishop(x, y, color)
+    if (x === 3)            return new Queen(x, y, color)
+    if (x === 4)            return new King(x, y, color)
+  }
+
+  initBoard(){
+    this.board = []
+    this.kinglessBoard = []
+    for (let y = 0; y < SIZE; y++) {
+      this.board[y] = []
+      this.kinglessBoard[y] = []
+      for (let x = 0; x < SIZE; x++) {
+        this.board[y][x] = this.createPieceByStartSquare(x, y);
+      }
+    }
+
+    this.updateKinglessBoard();
+  }
+
+  updateKinglessBoard(){
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const piece = this.board[y][x]
+        if (!piece || piece instanceof King){
+          this.kinglessBoard[y][x] = null;
+        } else {
+          this.kinglessBoard[y][x] = piece;
+        }
+      }
+    }
+  }
+
+  clearPath(board, from, to) {
+    const dx = Math.sign(to.x - from.x);
+    const dy = Math.sign(to.y - from.y);
+
+    let x = from.x + dx;
+    let y = from.y + dy;
+
+    while (x !== to.x || y !== to.y) {
+      if (board[y][x]) return false;
+      x += dx;
+      y += dy;
+    }
+    return true;
+  }
+
+  executeMove(piece, to){
+    const fromPos = {x: piece.x, y: piece.y}
+    const toPiece = this.board[to.y][to.x];
+
+    //add new cannibal
+    if (toPiece && Piece.isFriendly(piece, toPiece)){
+      const pieces = []
+      pieces.push(piece);
+      pieces.push(toPiece);
+      this.board[to.y][to.x] = new Cannibal(to.x, to.y, pieces, piece.getColor());
+    }   
+    
+    //normal move
+    else {
+      piece.move(to)
+    }
+
+    this.checkSpecialMoves(piece, fromPos)
+    this.dependencyUpdates(piece, fromPos);
+    this.updateKinglessBoard();
+    this.tickState(); 
+  }
+
+  checkSpecialMoves(piece, fromPos){
+    if (this.isEnPassant(piece, fromPos)){
+      this.board[fromPos.y][piece.x] = null;
+    }
+    if (this.isCastles(piece, fromPos)){
+      const rPos = piece.x - fromPos.x > 0 ? {x: 7, y: piece.y} : {x: 0, y: piece.y}
+      const r = this.board[rPos.y][rPos.x]
+      const newRPos = rPos.x === 7 ? {x: 5, y: piece.y} : {x: 3, y: piece.y}
+      r.move(newRPos)
+    }
+  }
+
+  isEnPassant(piece, fromPos){
+    if (!(piece instanceof Pawn)) return false;
+    const potentialPasser = this.board[fromPos.y][piece.x];
+    if (!potentialPasser)return false;
+    if (!(potentialPasser instanceof Pawn))return false;
+    return potentialPasser.isPassing;
+  }
+
+  isCastles(piece, fromPos){
+    if (!(piece instanceof King)) return false;
+    return Math.abs(piece.x - fromPos.x) === 2
+  }
+
+  playerSees(color, board, square){
+    console.log(color)
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const thePiece = board[y][x]
+        if (!thePiece) continue;
+        if (thePiece.getColor() !== color) continue;
+        const moves = thePiece.getValidMoves(board, false)
+        for (const p of moves){
+          if(p.x === square.x && p.y === square.y){
+            console.log(square)
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  resultsInEnemyCheck(piece, to){
+    //build hypothetical board
+    const hypothetical = []
+    for (let y = 0; y < SIZE; y++) {
+      hypothetical[y] = []
+      for (let x = 0; x < SIZE; x++) {
+        const thePiece = this.board[y][x];
+
+        if (thePiece !== piece){
+          hypothetical[y][x] = this.board[y][x]
+        } else {
+          hypothetical[y][x] = null
+        }
+      }
+    }
+    hypothetical[to.y][to.x] = piece;
+
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const thePiece = hypothetical[y][x]
+        if (!thePiece) continue;
+        if (thePiece.getColor() === piece.getColor()) continue;
+        const hypotheticalMoves = thePiece.getValidMoves(hypothetical, false)
+        for (const p of hypotheticalMoves){
+          const seenPiece = hypothetical[p.y][p.x]
+          if (seenPiece instanceof King && Piece.isFriendly(piece, seenPiece)) return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  dependencyUpdates(piece, fromPos){
+    piece.hasMoved = true;
+
+    for (const p of this.board){
+      for (const q of p){
+        if (p instanceof Pawn && p.isPassing === true)p.isPassing = false;
+      }
+    }
+
+    //en passant stuff
+    if (piece instanceof Pawn){
+      if (Math.abs(piece.y-fromPos.y) === 2){
+        const leftNeighbor = game.board[piece.y][piece.x-1]
+        const rightNeighbor = game.board[piece.y][piece.x+1]
+        if (leftNeighbor instanceof Pawn && !Piece.isFriendly(piece, leftNeighbor)){
+          piece.isPassing = true;
+        }
+        if (rightNeighbor instanceof Pawn && !Piece.isFriendly(piece, rightNeighbor)){
+          piece.isPassing = true;
+        }
+      }  
+    }
+
+    //update kingless board
+
+  }
+
+  tickState(){
+    this.currentPlayer = this.currentPlayer === "white" ? "black" : "white";
+    this.selected = null;
+    this.validMoves = [];
+  }
+
+  boardToScreen(x, y) {
+    if (this.boardOrientation === 1) {
+      return { sx: x, sy: y };
+    }
+    return {
+      sx: 7 - x,
+      sy: 7 - y
+    };
+  }
+
+  drawBoard() {
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const { sx, sy } = this.boardToScreen(x, y);
+        ctx.fillStyle = (x + y) % 2 === 0 ? "#f0d9b5" : "#b58863";
+        ctx.fillRect(sx * TILE, sy * TILE, TILE, TILE);
+
+        if (this.selected && this.selected.x === x && this.selected.y === y) {
+          ctx.strokeStyle = "yellow";
+          ctx.lineWidth = 4;
+          ctx.strokeRect(sx * TILE + 2, sy * TILE + 2, TILE - 4, TILE - 4);
+        }
+      }
+    }
+
+    this.renderPieces();
+  }
+
+  drawMoveDots() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+
+    for (const m of this.validMoves) {
+      const { sx, sy } = this.boardToScreen(m.x, m.y)
+      ctx.beginPath();
+      ctx.arc(
+        sx * TILE + TILE / 2,
+        sy * TILE + TILE / 2,
+        TILE * 0.12,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    }
+  }
+
+  renderPieces(){
+    for (const row of this.board){
+      for (const piece of row){
+        if (piece instanceof Piece){
+          piece.render();
+        }
+      }
+    }
+  }
+}
 
 /* ---------- Init ---------- */
 
-const board = [
-  ["r","n","b","q","k","b","n","r"],
-  ["p","p","p","p","p","p","p","p"],
-  ["","","","","","","",""],
-  ["","","","","","","",""],
-  ["","","","","","","",""],
-  ["","","","","","","",""],
-  ["P","P","P","P","P","P","P","P"],
-  ["R","N","B","Q","K","B","N","R"]
-];
+const game = new Game();
 
 for (const [key, name] of Object.entries(pieceMap)) {
   const img = new Image();
@@ -94,474 +614,31 @@ for (const [key, name] of Object.entries(pieceMap)) {
 
 loop();
 
-/* ---------- Helpers ---------- */
-
-function isWhite(p) { return p === p.toUpperCase(); }
-
-function isBlack(p) { return p === p.toLowerCase(); }
-
-function hasPiece(x, y){
-  return board[y][x] !== "";
-}
-
-function isPrimitive(p){
-  if (p.length <= 1) return true;
-  return false;
-}
-
-function isFriendly(p) {
-  if (!p) return false;
-  return currentPlayer === "white" ? isWhite(p) : isBlack(p);
-}
-
-/* ---------- Drawing ---------- */
-
-function boardToScreen(x, y) {
-  if (boardOrientation === 1) {
-    return { sx: x, sy: y };
-  }
-  return {
-    sx: 7 - x,
-    sy: 7 - y
-  };
-}
-
-function drawBoard() {
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      const { sx, sy } = boardToScreen(x, y);
-      ctx.fillStyle = (x + y) % 2 === 0 ? "#f0d9b5" : "#b58863";
-      ctx.fillRect(sx * TILE, sy * TILE, TILE, TILE);
-
-      if (selected && selected.x === x && selected.y === y) {
-        ctx.strokeStyle = "yellow";
-        ctx.lineWidth = 4;
-        ctx.strokeRect(sx * TILE + 2, sy * TILE + 2, TILE - 4, TILE - 4);
-      }
-      
-      drawPiece(x, y, board[y][x]);
-    }
-  }
-}
-
-function drawPiece(x, y, p) {
-  if (!p) return;
-
-  const { sx, sy } = boardToScreen(x, y);
-
-  const imgs = [];
-  for (const char of p){
-    imgs.push(sprites[char])
-  }
-  
-  const pad = TILE * 0.1;
-  for (const image of imgs){
-    ctx.drawImage(
-      image,
-      sx * TILE + pad,
-      sy * TILE + pad,
-      TILE - pad * 2,
-      TILE - pad * 2
-    );  
-  }
-}
-
-function formatTime(t) {
-  const m = Math.floor(t / 60);
-  const s = Math.floor(t % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-function drawClocks() {
-  ctx.fillStyle = "white";
-  ctx.font = "20px sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText(`White ${formatTime(whiteTime)}`, 10, 16);
-  ctx.textAlign = "right";
-  ctx.fillText(`Black ${formatTime(blackTime)}`, canvas.width -10, 16);
-}
-
-function drawMoveDots() {
-  ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-
-  for (const m of validMoves) {
-    const { sx, sy } = boardToScreen(m.x, m.y)
-    ctx.beginPath();
-    ctx.arc(
-      sx * TILE + TILE / 2,
-      sy * TILE + TILE / 2,
-      TILE * 0.12,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-  }
-}
-
-/* ---------- Movement Logic ---------- */
-
-function executeMove(from, to){
-  if (isLegalMove(from, to)) {
-    if (waitingForPromotionSelection === true)return;
-    //castles
-    if (isCastling(from, to) === true){
-      castles(from, to);
-    }    
-    //consumes
-    else if (isFriendly(board[to.y][to.x])){
-      board[to.y][to.x] += board[from.y][from.x];
-    }  
-    //promotes
-    else if (isPawnPromoting(from, to)){
-      beginPromotion(from, to); 
-      return;
-    }
-    //en passant
-    else if (isEnPassant(from, to)){
-      executeEnPassant(from, to)
-    }
-    //normal move
-    else { board[to.y][to.x] = board[from.y][from.x] } 
-    //empty the 'from' square
-    board[from.y][from.x] = "";
-
-    //post move state chores
-    updateCastlingDependencies(from, to)
-    updateEnPassantTarget(from, to)
-    updateSeenSquares();
-    currentPlayer = currentPlayer === "white" ? "black" : "white";
-  } 
-  selected = null;
-  validMoves = [];
-}
-
 function inBounds(x, y) {
   return x >= 0 && x < 8 && y >= 0 && y < 8;
-}
-
-function getValidMoves(from) {
-  const moves = [];
-
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      if (isLegalMove(from, { x, y })) {
-        moves.push({ x, y });
-      }
-    }
-  }
-  return moves;
-}
-
-function isLegalMove(from, to) {
-  const p = board[from.y][from.x];
-  const target = board[to.y][to.x];
-  const pieceColor = isWhite(p) ? "white" : "black"
-
-  if (from.x === to.x && from.y === to.y) return false;
-
-  //don't allow combining with king
-  if (combinesWithKing(from, to)) return false;
-
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-
-  const absX = Math.abs(dx);
-  const absY = Math.abs(dy);
-
-  const dir = isWhite(p) ? -1 : 1;
-
-  for (let i = 0; i < p.length; i++){
-    switch (p.charAt(i).toLowerCase()) {
-      case "p":
-        if (!target && dx === 0 && dy === dir) return true;
-        if (!target && dx === 0 && dy === dir * 2 &&
-            ((pieceColor == "white" && from.y === 6) || (pieceColor == "black" && from.y === 1)))
-          return true;
-        if (absX === 1 && dy === dir){ 
-          if (target) return true;
-          if (enPassantTarget[0] === to.x && enPassantTarget[1] === to.y) return true;
-        }
-        break;
-
-      case "r":
-        if (dx !== 0 && dy !== 0) break;
-        if (clearPath(from, to, p)) return true;
-        break;
-
-      case "b":
-        if (absX !== absY) break;
-        if (clearPath(from, to, p)) return true;
-        break;
-
-
-      case "q":
-        if (!(dx === 0 || dy === 0 || absX === absY)) break;
-        if (clearPath(from, to, p)) return true;
-        break;
-
-      case "n":
-        if ((absX === 1 && absY === 2) || (absX === 2 && absY === 1)) return true;
-        break;
-
-      case "k":
-        if (pieceColor === "white" && blackSeenSquares[to.y][to.x] == true)return false;
-        if (pieceColor === "black" && whiteSeenSquares[to.y][to.x] == true)return false;
-        if (absX <= 1 && absY <= 1 && clearPath(from, to, p)) return true;
-        if (isCastlingLegal(from, to)) return true;
-        break;
-    }
-  }
-
-
-  return false;
-}
-
-function clearPath(from, to, p) {
-  const dx = Math.sign(to.x - from.x);
-  const dy = Math.sign(to.y - from.y);
-
-  let x = from.x + dx;
-  let y = from.y + dy;
-
-  while (x !== to.x || y !== to.y) {
-    if (board[y][x]) return false;
-    x += dx;
-    y += dy;
-  }
-  return true;
-}
-
-//return true iff both arg squares contain pieces of the same color and one of the squares has a king
-function combinesWithKing(from, to){
-  if (!hasPiece(from.x, from.y) || !hasPiece(to.x, to.y)) return false;
-  if (isWhite(board[from.y][from.x]) !== isWhite(board[to.y][to.x])) return false;
-  if (board[from.y][from.x].toUpperCase() === "K" || board[to.y][to.x].toUpperCase() === "K") return true;
-  return false;
-}
-
-//from will always be a king. nothing else is guaranteed
-function isCastlingLegal(from, to){
-
-  //ensure king hasn't moved
-  const kingColor = isWhite(board[from.y][from.x]) === true ? "white" : "black"
-  if (kingColor === "white" && whiteKingMoved === true) return false;
-  if (kingColor === "black" && blackKingMoved === true) return false;
-
-  //ensure the 'to' location is valid for castling
-  if (Math.abs(from.x-to.x) !== 2)return false;
-  if (from.y-to.y !== 0)return false;
-
-  //ensure rook hasn't moved
-  const dir = from.x > to.x ? "left" : "right" 
-  if (kingColor === "white"){
-    if (dir === "left" && whiteARookMoved === true) return false;
-    if (dir === "right" && whiteHRookMoved === true) return false;
-  }
-  if (kingColor === "black"){
-    if (dir === "left" && blackARookMoved === true) return false;
-    if (dir === "right" && blackHRookMoved === true) return false;
-  }
-
-  //ensure path is clear
-  if (kingColor === "white"){
-    if (dir === "left"){
-      if (blackSeenSquares[7][3] === true || blackSeenSquares[7][2] === true) return false;
-    }
-    if (dir === "right"){
-      if (blackSeenSquares[7][5] === true || blackSeenSquares[7][6] === true) return false;
-    }
-  }
-  if (kingColor === "black"){
-    if (dir === "left"){
-      if (whiteSeenSquares[0][3] === true || whiteSeenSquares[0][2] === true) return false;
-    }
-    if (dir === "right"){
-      if (whiteSeenSquares[0][5] === true || whiteSeenSquares[0][6] === true) return false;
-    }
-  }
-
-  return true;
-}
-
-//this method only called once the move is confirmed legal
-//confirm the moving piece is a king and that it is moving more than 1 square
-function isCastling(from, to){
-  let piece = board[from.y][from.x];
-  if (piece.toUpperCase() !== "K")return false;
-  if (Math.abs(from.x-to.x) > 1)return true;
-  return false;
-}
-
-function castles(from, to){
-  const king = board[from.y][from.x];
-  const kingColor = king === "K" ? "white" : "black";
-  const dir = (from.x > to.x) ? -1 : 1;
-
-  board[from.y][from.x+(2*dir)] = king;
-  board[from.y][from.x+dir] = kingColor === "white" ? "R" : "r"
-  board[from.y][from.x] = "";
-
-  if (dir === 1)  board[from.y][7] = ""
-  if (dir === -1) board[from.y][0] = ""
-  board[from.y][from.x] = ""
-
-  if (kingColor === "white") whiteCastled = true;
-  if (kingColor === "black") blackCastled = true;
-}
-
-//move is known to be legal
-function isEnPassant(from, to){
-  if (enPassantTarget[0] === -1)return false;
-  if (to.x !== enPassantTarget[0] || to.y !== enPassantTarget[1])return false;
-  if (board[from.y][from.x].toUpperCase() !== "P")return false;
-  return true;
-}
-
-//move is known to be a legal en passant
-function executeEnPassant(from, to){
-  board[to.y][to.x] = board[selected.y][selected.x]
-  board[from.y][to.x] = ""
-}
-
-function isPawnPromoting(from, to){
-  let piece = board[from.y][from.x];
-  if (piece.toUpperCase() !== "P") return false;
-  const pawnColor = piece === "P" ? "white" : "black"
-  
-  if (pawnColor === "white" && to.y === 0)return true;
-  if (pawnColor === "black" && to.y === 7)return true;
-}
-
-function beginPromotion(from, to){
-  promotionSquare[0] = to.x;
-  promotionSquare[1] = to.y;
-  waitingForPromotionSelection = true;
-}
-
-function completePromotion(p){
-  if (currentPlayer === "white"){
-    board[promotionSquare[1]][promotionSquare[0]] = p.toUpperCase();
-  } else {
-    if (currentPlayer === "white")board[promotionSquare[1]][promotionSquare[0]] = p;
-  }
-  waitingForPromotionSelection = false;
-
-  board[selected.y][selected.x] = ""
-  updateCastlingDependencies(selected, promotionSquare)
-  updateSeenSquares();
-  currentPlayer = currentPlayer === "white" ? "black" : "white";
-  selected = null;
-  validMoves = [];
-}
-
-/* ---------- Post Move Updates ---------- */
-
-function updateSeenSquares(){
-
-  //reset both lists
-  for (let y = 0; y < SIZE; y++) {
-    whiteSeenSquares[y] = []
-    blackSeenSquares[y] = []
-
-    for (let x = 0; x < SIZE; x++) {
-      whiteSeenSquares[y][x] = false;
-      blackSeenSquares[y][x] = false;
-    }
-  }
-
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      if (hasPiece(x, y)){
-        const localMoves = getValidMoves({x, y});      
-        for (const m of localMoves){
-          if (isWhite(board[y][x])){
-            whiteSeenSquares[m.y][m.x] = true;
-          } else {
-            blackSeenSquares[m.y][m.x] = true;
-          }
-        }
-      }
-    }
-  }
-}
-
-function updateCastlingDependencies(from, to){
-  if ((from.x === 0 && from.y === 0) || (to.x === 0 && to.y === 0)) blackARookMoved = true;
-  if ((from.x === 7 && from.y === 0) || (to.x === 7 && to.y === 0)) blackHRookMoved = true;
-  if ((from.x === 0 && from.y === 7) || (to.x === 0 && to.y === 7)) whiteARookMoved = true;
-  if ((from.x === 7 && from.y === 7) || (to.x === 7 && to.y === 7)) whiteHRookMoved = true;
-  if ((from.x === 4 && from.y === 0) || (to.x === 4 && to.y === 0)) blackKingMoved = true;
-  if ((from.x === 4 && from.y === 7) || (to.x === 4 && to.y === 7)) whiteKingMoved = true;
-}
-
-function updateEnPassantTarget(from, to){
-  let piece = board[to.y][to.x];
-
-  if (piece.toUpperCase() !== "P"){
-    enPassantTarget[0] = -1;
-    return;
-  }
-  const pawnColor = piece === "P" ? "white" : "black"
-
-  let leftNeighbor = "z"
-  let rightNeighbor = "z"
-  const leftNeighborValid = to.x > 0
-  const rightNeighborValid = to.x < 7
-  
-  if (leftNeighborValid === true) leftNeighbor = board[to.y][to.x-1];
-  if (rightNeighborValid === true) rightNeighbor = board[to.y][to.x+1];
-
-  if (pawnColor === "white"){
-    //confirm pawn moving from starting square to two forward
-    if (from.y !== 6 || to.y !== 4){
-      enPassantTarget[0] = -1;
-      return;
-    }
-
-    //confirm neighbors at destination are enemy pawns
-    if (leftNeighbor === "p" || rightNeighbor === "p"){
-      enPassantTarget[0] = from.x;
-      enPassantTarget[1] = (from.y+to.y)/2;
-      return;
-    }
-  }
-
-  if (pawnColor === "black"){
-    if (from.y !== 1 || to.y !== 3){
-      enPassantTarget[0] = -1;
-      return;
-    }
-
-    if (leftNeighbor === "P" || rightNeighbor === "P"){
-      enPassantTarget[0] = from.x;
-      enPassantTarget[1] = (from.y+to.y)/2;
-      return;
-    }
-  }
-
 }
 
 /* ---------- Input ---------- */
 
 canvas.addEventListener("click", e => {
   const rect = canvas.getBoundingClientRect();
-  const { sx, sy } = boardToScreen(Math.floor((e.clientX - rect.left) / TILE), Math.floor((e.clientY - rect.top) / TILE));
+  const { sx, sy } = game.boardToScreen(Math.floor((e.clientX - rect.left) / TILE), Math.floor((e.clientY - rect.top) / TILE));
   const x = sx
   const y = sy  
   if (!inBounds(x, y)) return;
   
-  if (selected && isLegalMove(selected, ( { x, y }))) {
-    executeMove(selected, { x, y})
-  } else if (isFriendly(board[y][x])) {
-    selected = { x, y };
-    validMoves = getValidMoves(selected);
+  if (game.selected && game.selected.isMoveLegal(game.board, { x, y }, true)) {
+    game.executeMove(game.selected, { x, y})
+  } else if (game.board[y][x].getColor() === game.currentPlayer) {
+    game.selected = game.board[y][x];
+    game.validMoves = game.selected.getValidMoves(game.board, true);
   }
 
 });
 
 window.addEventListener("keydown", e => {
   if (e.key === "f"){
-    boardOrientation *= -1
+    game.boardOrientation *= -1
   }
   if (waitingForPromotionSelection === true){
     if(e.key === "q" || e.key === "r" || e.key === "n" || e.key === "b"){
@@ -574,10 +651,10 @@ window.addEventListener("keydown", e => {
 
 function loop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBoard();
-  if (selected) drawMoveDots();
-  drawClocks();
-  updateClocks();
+  game.drawBoard();
+  game.drawMoveDots();
+  // drawClocks();
+  // updateClocks();
   requestAnimationFrame(loop);
 }
 
@@ -592,7 +669,6 @@ function updateClocks() {
     blackTime = Math.max(0, blackTime - dt);
   }
 }
-
 </script>
 </body>
 </html>
