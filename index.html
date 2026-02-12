@@ -24,7 +24,7 @@
 </head>
 <body>
 
-<canvas id="board" width="480" height="480"></canvas>
+<canvas id="board" width="256" height="256"></canvas>
 
 <script>
   const canvas = document.getElementById("board");
@@ -32,21 +32,6 @@ const ctx = canvas.getContext("2d");
 const SIZE = 8;
 const TILE = canvas.width / SIZE;
 const sprites = {};
-const pieceMap = {
-  P: "white-pawn",
-  R: "white-rook",
-  N: "white-knight",
-  B: "white-bishop",
-  Q: "white-queen",
-  K: "white-king",
-  p: "black-pawn",
-  r: "black-rook",
-  n: "black-knight",
-  b: "black-bishop",
-  q: "black-queen",
-  k: "black-king"
-};
-
 
 class Piece {
   label;
@@ -57,18 +42,23 @@ class Piece {
     this.hasMoved = false;
   }    
 
+  setImage(){
+    const img = new Image();
+    const name = this.getColor()+"-"+(this.getLabel().toLowerCase());
+    img.src = `assets/pieces/${name}.png`;
+    img.onload = () => {     }
+    return img;
+  }
+
   render(){
-    for (const char of this.label){
-      const image = sprites[char]
-      const pad = TILE * 0.1;
-      ctx.drawImage(
-        image,
-        this.x * TILE + pad,
-        this.y * TILE + pad,
-        TILE - pad * 2,
-        TILE - pad * 2
-      );  
-    }
+    ctx.drawImage(
+      this.image,
+      this.x * TILE,
+      this.y * TILE,
+      32,
+      32
+    );  
+
   }
 
   move(pos){
@@ -132,6 +122,7 @@ class Pawn extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("p")
+    this.image = this.setImage()
     this.dir = this.color === "white" ? -1 : 1
   }
 
@@ -172,6 +163,7 @@ class Knight extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("n")
+    this.image = this.setImage()
   }
 
   isMoveLegal(board, to, isPrimary){
@@ -193,6 +185,7 @@ class Bishop extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("b")
+    this.image = this.setImage()
   }
 
   isMoveLegal(board, to, isPrimary){
@@ -214,6 +207,7 @@ class Rook extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("r")
+    this.image = this.setImage()
   }
 
   isMoveLegal(board, to, isPrimary){
@@ -235,6 +229,7 @@ class Queen extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("q")
+    this.image = this.setImage()
   }
 
   isMoveLegal(board, to, isPrimary){
@@ -259,6 +254,7 @@ class King extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("k")
+    this.image = this.setImage()
   }
 
   isMoveLegal(board, to, isPrimary){
@@ -294,7 +290,6 @@ class King extends Piece{
     if (!isPrimary) return true;
     if (game.playerSees(oppColor, board, {x: this.x+castleDir, y: this.y})) return false;
     if (game.playerSees(oppColor, board, {x: this.x+(2*castleDir), y: this.y})) return false;
-    console.log(this.getColor()+" can castle")
     return true;
   }
 }
@@ -307,6 +302,7 @@ class Cannibal extends Piece{
     this.pieces = Piece.flatten(pieces) // store pieces in a flat array
     this.move({x: x, y: y})
     this.label = this.initLabel()
+    this.image = this.setImage()
     this.hasMoved = true;
   } 
 
@@ -324,8 +320,45 @@ class Cannibal extends Piece{
     for (const p of this.pieces){
       label += p.getLabel()
     }
-    return label;
+
+    const labelMap = ['q', 'r', 'b', 'n', 'p']
+    
+    return this.sortStringByCustomSequence(label, labelMap);
   }
+
+  sortStringByCustomSequence (str, sequence){
+    
+    //remove duplicates
+    const unique = new Set(str);
+    const uniqueArray = [...unique]
+    str = uniqueArray.join('')
+
+    // If the sequence is a string, convert it to a Map for efficient lookups (O(1)).
+    const orderMap = new Map();
+    for (let i = 0; i < sequence.length; i++) {
+      if (!orderMap.has(sequence[i])) { // Prevents overwriting if sequence has duplicates
+        orderMap.set(sequence[i], i);
+      }
+    }
+
+    // Split the string into an array of characters
+    const charArray = str.split('');
+
+    // Sort the array using a custom comparison function
+    charArray.sort((a, b) => {
+      // Get the index of 'a' and 'b' in the custom sequence
+      // If a character is not in the sequence, you can handle it (e.g., place at the end)
+      const indexA = orderMap.has(a) ? orderMap.get(a) : Infinity;
+      const indexB = orderMap.has(b) ? orderMap.get(b) : Infinity;
+
+      return indexA - indexB; // Returns a negative, zero, or positive value
+    });
+
+    // Join the sorted array back into a string
+    return charArray.join('');
+  }
+
+  
 
   getPieces(){
     return this.pieces;
@@ -459,7 +492,6 @@ class Game {
   }
 
   playerSees(color, board, square){
-    console.log(color)
     for (let y = 0; y < SIZE; y++) {
       for (let x = 0; x < SIZE; x++) {
         const thePiece = board[y][x]
@@ -468,7 +500,6 @@ class Game {
         const moves = thePiece.getValidMoves(board, false)
         for (const p of moves){
           if(p.x === square.x && p.y === square.y){
-            console.log(square)
             return true;
           }
         }
@@ -602,15 +633,18 @@ class Game {
 /* ---------- Init ---------- */
 
 const game = new Game();
+let moveSound = new Audio("assets/sound/plastic1.wav");
+let captureSound = new Audio("assets/sound/plastic2.wav");
+let cannibalSound = new Audio("assets/sound/metal2.wav");
 
-for (const [key, name] of Object.entries(pieceMap)) {
-  const img = new Image();
-  img.src = `assets/pieces/${name}.png`;
-  img.onload = () => {
+// for (const [key, name] of Object.entries(pieceMap)) {
+//   const img = new Image();
+//   img.src = `assets/pieces/${name}.png`;
+//   img.onload = () => {
        
-  }
-  sprites[key] = img; 
-}
+//   }
+//   sprites[key] = img; 
+// }
 
 loop();
 
@@ -628,7 +662,21 @@ canvas.addEventListener("click", e => {
   if (!inBounds(x, y)) return;
   
   if (game.selected && game.selected.isMoveLegal(game.board, { x, y }, true)) {
+    //sound stuff
+    if (!game.board[y][x]){
+      moveSound.play();
+      console.log("move")
+    }
+    else if (game.board[y][x].getColor() === game.currentPlayer){
+      cannibalSound.play();
+      console.log("cannibal")
+    }
+    else if (game.board[y][x].getColor() !== game.currentPlayer){
+      captureSound.play();
+      console.log("capture")
+    }
     game.executeMove(game.selected, { x, y})
+    
   } else if (game.board[y][x].getColor() === game.currentPlayer) {
     game.selected = game.board[y][x];
     game.validMoves = game.selected.getValidMoves(game.board, true);
