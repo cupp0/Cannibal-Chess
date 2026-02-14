@@ -581,31 +581,32 @@ class Game {
   }
 
   resultsInEnemyCheck(theBoard, piece, to){
-    //build hypothetical board
-    const hypothetical = []
-    for (let y = 0; y < SIZE; y++) {
-      hypothetical[y] = []
-      for (let x = 0; x < SIZE; x++) {
-        const thePiece = theBoard[y][x];
-
-        if (thePiece !== piece){
-          hypothetical[y][x] = theBoard[y][x]
-        } else {
-          hypothetical[y][x] = null
-        }
-      }
-    }
-    hypothetical[to.y][to.x] = piece;
-    
-    const enemyColor = piece.getColor() === "white" ? "black" : "white"
-    const friendlyKing = this.getKing(piece.getColor());
-    const enemyKing = this.getKing(piece.getColor());  
-    
-    if (this.playerSees(enemyColor, hypothetical, {x: friendlyKing.x, y: friendlyKing.y})){
-      if (enemyKing.x === to.x && enemyKing.y === to.y) return false;
-      return true;
-    }
     return false;
+    //build hypothetical board
+    // const hypothetical = []
+    // for (let y = 0; y < SIZE; y++) {
+    //   hypothetical[y] = []
+    //   for (let x = 0; x < SIZE; x++) {
+    //     const thePiece = theBoard[y][x];
+
+    //     if (thePiece !== piece){
+    //       hypothetical[y][x] = theBoard[y][x]
+    //     } else {
+    //       hypothetical[y][x] = null
+    //     }
+    //   }
+    // }
+    // hypothetical[to.y][to.x] = piece;
+    
+    // const enemyColor = piece.getColor() === "white" ? "black" : "white"
+    // const friendlyKing = this.getKing(piece.getColor());
+    // const enemyKing = this.getKing(piece.getColor());  
+    
+    // if (this.playerSees(enemyColor, hypothetical, {x: friendlyKing.x, y: friendlyKing.y})){
+    //   if (enemyKing.x === to.x && enemyKing.y === to.y) return false;
+    //   return true;
+    // }
+    // return false;
     
     // for (let y = 0; y < SIZE; y++) {
     //   for (let x = 0; x < SIZE; x++) {
