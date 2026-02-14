@@ -33,14 +33,13 @@ const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 const SIZE = 8;
 const TILE = canvas.width / SIZE;
-const pieceOrder = ['q', 'r', 'b', 'n', 'p']
-const combs = generateCombinations(5)
+const pieceOrder = ['b', 'n', 'p', 'q', 'r']
 const pieceBuffers = new Map()
 const imgBuffers = new Map()
 initBuffers();
 
 function initBuffers(){
-  for (const i of combs){
+  for (const i of generateCombinations(5)){
     let pieceComb = "";
     for (const j of i){
       pieceComb += pieceOrder[j];
@@ -120,7 +119,10 @@ class Piece {
 
   render(){
     const name = this.getColor()+"-"+(this.getLabel().toLowerCase())
-    if (!imgBuffers.get(name)) return
+    if (!imgBuffers.get(String(name))){
+      
+      return
+    }
     ctx.drawImage(
       imgBuffers.get(name),
       this.x * TILE,
@@ -183,12 +185,12 @@ class Piece {
     return (k instanceof King && this.getColor() === k.getColor())
   }
 
-  getValidMoves(board, isPrimary) {
+  getValidMoves(theBoard, isPrimary) {
     const moves = [];
 
     for (let y = 0; y < SIZE; y++) {
       for (let x = 0; x < SIZE; x++) {
-        if (this.isMoveLegal(board, { x, y }, isPrimary)) {
+        if (this.isMoveLegal(theBoard, { x, y }, isPrimary)) {
           moves.push({ x, y });
         }
       }
@@ -229,7 +231,7 @@ class Pawn extends Piece{
     }
 
     if (!isPrimary) return true;
-    if (game.resultsInEnemyCheck(this, to)) return false;    
+    if (game.resultsInEnemyCheck(board, this, to)) return false;    
     return true;
   }
 
@@ -256,7 +258,7 @@ class Knight extends Piece{
     if (!((absX === 1 && absY === 2) || (absX === 2 && absY === 1))) return false;
 
     if (!isPrimary) return true;
-    if (game.resultsInEnemyCheck(this, to)) return false;    
+    if (game.resultsInEnemyCheck(board, this, to)) return false;    
     return true;
   }
 
@@ -278,7 +280,7 @@ class Bishop extends Piece{
     if (!game.clearPath(board, {x: this.x, y: this.y}, to)) return false;
 
     if (!isPrimary) return true;
-    if (game.resultsInEnemyCheck(this, to)) return false;    
+    if (game.resultsInEnemyCheck(board, this, to)) return false;    
     return true; 
   }
 }
@@ -299,7 +301,7 @@ class Rook extends Piece{
     if (!game.clearPath(board, {x: this.x, y: this.y}, to)) return false;
     
     if (!isPrimary) return true;
-    if (game.resultsInEnemyCheck(this, to)) return false;
+    if (game.resultsInEnemyCheck(board, this, to)) return false;
     return true;
   }
 }
@@ -323,7 +325,7 @@ class Queen extends Piece{
     if (!game.clearPath(board, {x: this.x, y: this.y}, to)) return false;
     
     if (!isPrimary) return true;
-    if (game.resultsInEnemyCheck(this, to)) return false;
+    if (game.resultsInEnemyCheck(board, this, to)) return false;
     return true; 
   }
 }
@@ -347,7 +349,7 @@ class King extends Piece{
     }
 
     if (!isPrimary) return true;
-    if (game.resultsInEnemyCheck(this, to)) return false;
+    if (game.resultsInEnemyCheck(board, this, to)) return false;
     return true; 
   }
 
@@ -392,57 +394,41 @@ class Cannibal extends Piece{
   }
 
   initLabel(){
-    let label = ""
+    let chars = []
     for (const p of this.pieces){
-      label += p.getLabel()
+      if (chars.includes(p.getLabel()))continue;
+      chars.push(p.getLabel())
     }
-
-    const labelMap = ['q', 'r', 'b', 'n', 'p']
-    
-    return this.sortStringByCustomSequence(label, labelMap);
-  }
-
-  sortStringByCustomSequence (str, sequence){
-    
-    //remove duplicates
-    const unique = new Set(str);
-    const uniqueArray = [...unique]
-    str = uniqueArray.join('')
-
-    // If the sequence is a string, convert it to a Map for efficient lookups (O(1)).
-    const orderMap = new Map();
-    for (let i = 0; i < sequence.length; i++) {
-      if (!orderMap.has(sequence[i])) { // Prevents overwriting if sequence has duplicates
-        orderMap.set(sequence[i], i);
-      }
-    }
-
-    // Split the string into an array of characters
-    const charArray = str.split('');
-
-    // Sort the array using a custom comparison function
-    charArray.sort((a, b) => {
-      // Get the index of 'a' and 'b' in the custom sequence
-      // If a character is not in the sequence, you can handle it (e.g., place at the end)
-      const indexA = orderMap.has(a) ? orderMap.get(a) : Infinity;
-      const indexB = orderMap.has(b) ? orderMap.get(b) : Infinity;
-
-      return indexA - indexB; // Returns a negative, zero, or positive value
-    });
-
-    // Join the sorted array back into a string
-    return charArray.join('');
-  }
-
-  
+    chars.sort()
+    return chars.join('')
+  }  
 
   getPieces(){
     return this.pieces;
   }
 
-  isMoveLegal(board, to, isPrimary){
+  isMoveLegal(theBoard, to, isPrimary){
     for (const p of this.pieces){
-      if (p.isMoveLegal(board, to, isPrimary))return true;
+
+      const hypothetical = []
+      for (let y = 0; y < SIZE; y++) {
+        hypothetical[y] = []
+        for (let x = 0; x < SIZE; x++) {
+          const thePiece = theBoard[y][x];
+
+          if (thePiece !== this){
+            hypothetical[y][x] = theBoard[y][x]
+          } else {
+            hypothetical[y][x] = p
+          }
+        }
+      }
+
+
+      if (p.isMoveLegal(hypothetical, to, false)){
+        if (game.resultsInEnemyCheck(hypothetical, this, to))return false;
+        return true;
+      }
     }
     return false;
   }
@@ -567,13 +553,23 @@ class Game {
     return Math.abs(piece.x - fromPos.x) === 2
   }
 
-  playerSees(color, board, square){
+  getKing(color){
     for (let y = 0; y < SIZE; y++) {
       for (let x = 0; x < SIZE; x++) {
-        const thePiece = board[y][x]
+        const thePiece = this.board[y][x]
+        if (!thePiece) continue;
+        if (thePiece.getColor() === color && thePiece instanceof King)return thePiece
+      }
+    }
+  }
+
+  playerSees(color, theBoard, square){
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const thePiece = theBoard[y][x]
         if (!thePiece) continue;
         if (thePiece.getColor() !== color) continue;
-        const moves = thePiece.getValidMoves(board, false)
+        const moves = thePiece.getValidMoves(theBoard, false)
         for (const p of moves){
           if(p.x === square.x && p.y === square.y){
             return true;
@@ -584,37 +580,48 @@ class Game {
     return false;
   }
 
-  resultsInEnemyCheck(piece, to){
+  resultsInEnemyCheck(theBoard, piece, to){
     //build hypothetical board
     const hypothetical = []
     for (let y = 0; y < SIZE; y++) {
       hypothetical[y] = []
       for (let x = 0; x < SIZE; x++) {
-        const thePiece = this.board[y][x];
+        const thePiece = theBoard[y][x];
 
         if (thePiece !== piece){
-          hypothetical[y][x] = this.board[y][x]
+          hypothetical[y][x] = theBoard[y][x]
         } else {
           hypothetical[y][x] = null
         }
       }
     }
     hypothetical[to.y][to.x] = piece;
-
-    for (let y = 0; y < SIZE; y++) {
-      for (let x = 0; x < SIZE; x++) {
-        const thePiece = hypothetical[y][x]
-        if (!thePiece) continue;
-        if (thePiece.getColor() === piece.getColor()) continue;
-        const hypotheticalMoves = thePiece.getValidMoves(hypothetical, false)
-        for (const p of hypotheticalMoves){
-          const seenPiece = hypothetical[p.y][p.x]
-          if (seenPiece instanceof King && Piece.isFriendly(piece, seenPiece)) return true;
-        }
-      }
+    
+    const enemyColor = piece.getColor() === "white" ? "black" : "white"
+    const friendlyKing = this.getKing(piece.getColor());
+    const enemyKing = this.getKing(piece.getColor());  
+    
+    if (this.playerSees(enemyColor, hypothetical, {x: friendlyKing.x, y: friendlyKing.y})){
+      if (enemyKing.x === to.x && enemyKing.y === to.y) return false;
+      return true;
     }
-
     return false;
+    
+    // for (let y = 0; y < SIZE; y++) {
+    //   for (let x = 0; x < SIZE; x++) {
+    //     const thePiece = hypothetical[y][x]
+    //     if (!thePiece) continue;
+    //     if (thePiece.getColor() === piece.getColor()) continue;
+    //     if (thePiece instanceof Cannibal)console.log(thePiece)
+    //     const hypotheticalMoves = thePiece.getValidMoves(hypothetical, false)
+    //     for (const p of hypotheticalMoves){
+    //       const seenPiece = hypothetical[p.y][p.x]
+    //       if (seenPiece instanceof King && Piece.isFriendly(piece, seenPiece)) return true;
+    //     }
+    //   }
+    // }
+
+    // return false;
   }
 
   dependencyUpdates(piece, fromPos){
