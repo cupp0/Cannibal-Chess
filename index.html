@@ -119,30 +119,30 @@ class Piece {
 
   render(){
     const name = this.getColor()+"-"+(this.getLabel().toLowerCase())
-    if (!imgBuffers.get(String(name))){
+    // if (!imgBuffers.get(String(name))){
       
-      return
-    }
-    ctx.drawImage(
-      imgBuffers.get(name),
-      this.x * TILE,
-      this.y * TILE,
-      32,
-      32
-    ); 
-    // const buffer = pieceBuffers.get(name)
-    // if(!buffer)return
-    // for (let y = 0; y < buffer.length; y++) {
-    //   for (let x = 0; x < buffer[y].length; x++) {
-    //     const r = buffer[y][x][0];
-    //     const g = buffer[y][x][1];
-    //     const b = buffer[y][x][2];
-    //     const a = buffer[y][x][3];
+    //   return
+    // }
+    // ctx.drawImage(
+    //   imgBuffers.get(name),
+    //   this.x * TILE,
+    //   this.y * TILE,
+    //   32,
+    //   32
+    // ); 
+    const buffer = pieceBuffers.get(name)
+    if(!buffer)return
+    for (let y = 0; y < buffer.length; y++) {
+      for (let x = 0; x < buffer[y].length; x++) {
+        const r = buffer[y][x][0];
+        const g = buffer[y][x][1];
+        const b = buffer[y][x][2];
+        const a = buffer[y][x][3];
 
-    //     ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
-    //     ctx.fillRect(this.x * TILE + x, this.y * TILE + y, 1, 1);
-    //   }
-    // } 
+        ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+        ctx.fillRect(this.x * TILE + x, this.y * TILE + y, 1, 1);
+      }
+    } 
 
   }
 
@@ -210,6 +210,28 @@ class Pawn extends Piece{
     this.dir = this.color === "white" ? -1 : 1
   }
 
+  sees(board, square){
+    const dx = square.x - this.x
+    const dy = square.y - this.y
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 2)return false;
+    if (Math.sign(dy) !== Math.sign(this.dir)) return false;
+    if (Math.abs(dx) === 1 && Math.abs(dy) === 2)return false;
+
+    const target = board[square.y][square.x];
+    if (this.isFriendlyKing(target))return false;
+    if (target && dx === 0) return false;
+    if ((this.hasMoved === true) && Math.abs(dy) === 2) return false;
+
+    //capturing/eating
+    if (Math.abs(dx) === 1 && dy === this.dir){
+      if(!target){
+        if (!this.canEnPassant(board, square)) return false;
+      } 
+    }
+
+    return true;
+  }
+
   isMoveLegal(board, to, isPrimary){
     const dx = to.x - this.x
     const dy = to.y - this.y
@@ -249,6 +271,16 @@ class Knight extends Piece{
     this.setLabel("n")
   }
 
+  sees(board, square){
+    const target = board[square.y][square.x];
+    if (this.isFriendlyKing(target))return false;
+
+    const absX = Math.abs(square.x-this.x);
+    const absY = Math.abs(square.y-this.y);
+    if (!((absX === 1 && absY === 2) || (absX === 2 && absY === 1))) return false;
+    return true;
+  }
+
   isMoveLegal(board, to, isPrimary){
     const target = board[to.y][to.x];
     if (this.isFriendlyKing(target))return false;
@@ -268,6 +300,16 @@ class Bishop extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("b")
+  }
+
+  sees(board, square){
+    const target = board[square.y][square.x];    
+    if (this.isFriendlyKing(target))return false;
+    const absX = Math.abs(square.x-this.x);
+    const absY = Math.abs(square.y-this.y);
+    if (absX !== absY) return false;
+    if (!game.clearPath(board, {x: this.x, y: this.y}, square)) return false;
+    return true; 
   }
 
   isMoveLegal(board, to, isPrimary){
@@ -291,6 +333,16 @@ class Rook extends Piece{
     this.setLabel("r")
   }
 
+  sees(board, square){
+    const target = board[square.y][square.x];    
+    if (this.isFriendlyKing(target))return false;
+    const dx = square.x-this.x;
+    const dy = square.y-this.y;
+    if (dx !== 0 && dy !== 0) return false;
+    if (!game.clearPath(board, {x: this.x, y: this.y}, square)) return false;
+    return true;
+  }
+
   isMoveLegal(board, to, isPrimary){
     const target = board[to.y][to.x];    
     if (this.isFriendlyKing(target))return false;
@@ -310,6 +362,20 @@ class Queen extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("q")
+  }
+
+  sees(board, square){
+    const target = board[square.y][square.x];    
+    if (this.isFriendlyKing(target))return false;
+
+    const absX = Math.abs(square.x-this.x);
+    const absY = Math.abs(square.y-this.y);
+    const dx = square.x-this.x;
+    const dy = square.y-this.y;
+
+    if ((absX !== absY) && (dx !== 0 && dy !== 0)) return false;
+    if (!game.clearPath(board, {x: this.x, y: this.y}, square)) return false;
+    return true; 
   }
 
   isMoveLegal(board, to, isPrimary){
@@ -336,6 +402,20 @@ class King extends Piece{
     this.setLabel("k")
   }
 
+  sees(board, square){
+    const toPiece = board[square.y][square.x];
+
+    if (toPiece && Piece.isFriendly(this, toPiece)) return false;
+    const dx = Math.abs(square.x-this.x);
+    const dy = Math.abs(square.y-this.y);
+
+    if (dy > 1) return false;
+    if (dx > 1){
+      if (!this.canCastle(board, square)) return false;
+    }
+    return true; 
+  }
+
   isMoveLegal(board, to, isPrimary){
     const toPiece = board[to.y][to.x];
 
@@ -345,7 +425,7 @@ class King extends Piece{
 
     if (dy > 1) return false;
     if (dx > 1){
-      if (!this.canCastle(board, to, isPrimary)) return false;
+      if (!this.canCastle(board, to)) return false;
     }
 
     if (!isPrimary) return true;
@@ -353,7 +433,7 @@ class King extends Piece{
     return true; 
   }
 
-  canCastle(board, to, isPrimary){
+  canCastle(board, to){
     const dx = to.x-this.x;
     const dy = to.y-this.y; 
     if (Math.abs(dx) !== 2 || dy !== 0) return false;
@@ -366,7 +446,7 @@ class King extends Piece{
     const oppColor = this.getColor() === "white" ? "black" : "white";
     const castleDir = Math.sign(dx);
 
-    if (!isPrimary) return true;
+    if (game.playerSees(oppColor, board, {x: this.x, y: this.y})) return false;
     if (game.playerSees(oppColor, board, {x: this.x+castleDir, y: this.y})) return false;
     if (game.playerSees(oppColor, board, {x: this.x+(2*castleDir), y: this.y})) return false;
     return true;
@@ -378,7 +458,7 @@ class Cannibal extends Piece{
 
   constructor(x, y, pieces, color) {
     super(x, y, color)
-    this.pieces = Piece.flatten(pieces) // store pieces in a flat array
+    this.pieces = Piece.flatten(pieces)
     this.move({x: x, y: y})
     this.label = this.initLabel()
     this.hasMoved = true;
@@ -405,6 +485,15 @@ class Cannibal extends Piece{
 
   getPieces(){
     return this.pieces;
+  }
+
+  sees(board, square){
+    for (const p of this.pieces){
+      if (p.sees(board, square)){
+        return true;
+      }
+    }
+    return false;
   }
 
   isMoveLegal(theBoard, to, isPrimary){
@@ -569,44 +658,46 @@ class Game {
         const thePiece = theBoard[y][x]
         if (!thePiece) continue;
         if (thePiece.getColor() !== color) continue;
-        const moves = thePiece.getValidMoves(theBoard, false)
-        for (const p of moves){
-          if(p.x === square.x && p.y === square.y){
-            return true;
-          }
-        }
+        if (thePiece.sees(theBoard, square))return true;
       }
     }
     return false;
   }
 
-  resultsInEnemyCheck(theBoard, piece, to){
-    return false;
-    //build hypothetical board
-    // const hypothetical = []
-    // for (let y = 0; y < SIZE; y++) {
-    //   hypothetical[y] = []
-    //   for (let x = 0; x < SIZE; x++) {
-    //     const thePiece = theBoard[y][x];
+  getHypotheticalBoard(piece, toSquare){
 
-    //     if (thePiece !== piece){
-    //       hypothetical[y][x] = theBoard[y][x]
-    //     } else {
-    //       hypothetical[y][x] = null
-    //     }
-    //   }
-    // }
-    // hypothetical[to.y][to.x] = piece;
+  }
+
+  resultsInEnemyCheck(theBoard, piece, to){
+    //build hypothetical board
+    const hypothetical = []
+    for (let y = 0; y < SIZE; y++) {
+      hypothetical[y] = []
+      for (let x = 0; x < SIZE; x++) {
+        const thePiece = theBoard[y][x];
+
+        if (thePiece !== piece){
+          hypothetical[y][x] = theBoard[y][x]
+        } 
+      }
+    }
+    hypothetical[piece.y][piece.x] = null;
+    hypothetical[to.y][to.x] = piece; 
+    const enemyColor = piece.getColor() === "white" ? "black" : "white";
+
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const thePiece = hypothetical[y][x];
+        if (!(thePiece instanceof King && thePiece.getColor() === piece.getColor())) continue;
+      
+        if (this.playerSees(enemyColor, hypothetical, {x: x, y: y})){
+          return true;
+        }
+      }
+    }
     
-    // const enemyColor = piece.getColor() === "white" ? "black" : "white"
-    // const friendlyKing = this.getKing(piece.getColor());
-    // const enemyKing = this.getKing(piece.getColor());  
     
-    // if (this.playerSees(enemyColor, hypothetical, {x: friendlyKing.x, y: friendlyKing.y})){
-    //   if (enemyKing.x === to.x && enemyKing.y === to.y) return false;
-    //   return true;
-    // }
-    // return false;
+    return false;
     
     // for (let y = 0; y < SIZE; y++) {
     //   for (let x = 0; x < SIZE; x++) {
@@ -628,9 +719,10 @@ class Game {
   dependencyUpdates(piece, fromPos){
     piece.hasMoved = true;
 
-    for (const p of this.board){
-      for (const q of p){
-        if (p instanceof Pawn && p.isPassing === true)p.isPassing = false;
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const thePiece = this.board[y][x]
+        if (thePiece instanceof Pawn && thePiece.isPassing === true)thePiece.isPassing = false;
       }
     }
 
