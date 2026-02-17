@@ -33,7 +33,7 @@ const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 const SIZE = 8;
 const TILE = 32;
-const boardOffset = {x: 300, y: 180}
+const boardOffset = {x: 320, y: 180}
 const pieceOrder = ['b', 'n', 'p', 'q', 'r']
 const pieceBuffers = new Map()
 const imgBuffers = new Map()
@@ -904,7 +904,7 @@ function loop() {
       0, 
       0,
       canvas.width,
-      canvas.height+60
+      canvas.height+90
     ); 
   };
   game.drawBoard();
