@@ -25,18 +25,34 @@
 </head>
 <body>
 
-<canvas id="board" width="256" height="256"></canvas>
+<canvas id="board" width="900" height="600"></canvas>
 
 <script>
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 const SIZE = 8;
-const TILE = canvas.width / SIZE;
+const TILE = 32;
+const boardOffset = {x: 300, y: 200}
 const pieceOrder = ['b', 'n', 'p', 'q', 'r']
 const pieceBuffers = new Map()
 const imgBuffers = new Map()
+const flagImages = []
 initBuffers();
+loadFlag();
+let flagSpeed = 0;
+let flagSample = 1;
+
+function loadFlag(){
+  for (let i = 1; i < 1000; i++){
+    const img = new Image();
+    const name = "flag"+String(i);
+    img.src = `assets/flag/${name}.png`;
+    img.onload = function() {
+      flagImages[i] = img;
+    }
+  }
+}
 
 function initBuffers(){
   for (const i of generateCombinations(5)){
@@ -140,7 +156,7 @@ class Piece {
         const a = buffer[y][x][3];
 
         ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
-        ctx.fillRect(this.x * TILE + x, this.y * TILE + y, 1, 1);
+        ctx.fillRect(boardOffset.x + this.x * TILE + x, boardOffset.y + this.y * TILE + y, 1, 1);
       }
     } 
 
@@ -750,27 +766,29 @@ class Game {
     this.validMoves = [];
   }
 
-  boardToScreen(x, y) {
-    if (this.boardOrientation === 1) {
-      return { sx: x, sy: y };
-    }
+  screenToBoard(pos) {
+    const sx = Math.floor((pos.x-boardOffset.x) / 32);  
+    const sy = Math.floor((pos.y-boardOffset.y) / 32);  
+
     return {
-      sx: 7 - x,
-      sy: 7 - y
+      sx: sx,
+      sy: sy
     };
   }
 
   drawBoard() {
+    ctx.fillStyle = "rgba(0, 0, 0, 255)";
+    ctx.fillRect(boardOffset.x -6, boardOffset.y-6, 268, 268);
     for (let y = 0; y < SIZE; y++) {
       for (let x = 0; x < SIZE; x++) {
-        const { sx, sy } = this.boardToScreen(x, y);
-        ctx.fillStyle = (x + y) % 2 === 0 ? "#f0d9b5" : "#b58863";
-        ctx.fillRect(sx * TILE, sy * TILE, TILE, TILE);
+        //const { sx, sy } = this.boardToScreen(x, y);
+        ctx.fillStyle = (x + y) % 2 === 0 ? "rgba(100, 100, 100, 255)" : "rgba(20, 20, 20, 255)";
+        ctx.fillRect(boardOffset.x + x * TILE,boardOffset.y + y * TILE, TILE, TILE);
 
         if (this.selected && this.selected.x === x && this.selected.y === y) {
           ctx.strokeStyle = "yellow";
           ctx.lineWidth = 4;
-          ctx.strokeRect(sx * TILE + 2, sy * TILE + 2, TILE - 4, TILE - 4);
+          //ctx.strokeRect(boardOffset.x + sx * TILE + 2, boardOffset.y + sy * TILE + 2, TILE - 4, TILE - 4);
         }
       }
     }
@@ -779,20 +797,23 @@ class Game {
   }
 
   drawMoveDots() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
 
     for (const m of this.validMoves) {
       const { sx, sy } = this.boardToScreen(m.x, m.y)
       ctx.beginPath();
-      ctx.arc(
-        sx * TILE + TILE / 2,
-        sy * TILE + TILE / 2,
-        TILE * 0.12,
-        0,
-        Math.PI * 2
+      ctx.fillRect(
+        sx+12,
+        sy+12,
+        8,
+        8
       );
       ctx.fill();
     }
+  }
+
+  boardToScreen(x, y){
+    return {sx: 32*x+boardOffset.x, sy: 32*y + boardOffset.y}
   }
 
   renderPieces(){
@@ -831,8 +852,7 @@ function inBounds(x, y) {
 /* ---------- Input ---------- */
 
 canvas.addEventListener("click", e => {
-  const rect = canvas.getBoundingClientRect();
-  const { sx, sy } = game.boardToScreen(Math.floor((e.clientX - rect.left) / TILE), Math.floor((e.clientY - rect.top) / TILE));
+  const { sx, sy } = game.screenToBoard(getCursorPosition(canvas, e));
   const x = sx
   const y = sy  
   if (!inBounds(x, y)) return;
@@ -872,11 +892,36 @@ window.addEventListener("keydown", e => {
 
 function loop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  flagSpeed++;
+  if (flagSpeed%5 === 0){
+    flagSample++;
+    flagSample = flagSample%1000 +1
+  }
+
+  if (flagImages[flagSample]){
+    ctx.drawImage(
+      flagImages[flagSample],
+      0, 
+      0,
+      canvas.width,
+      canvas.height+30
+    ); 
+  };
   game.drawBoard();
   game.drawMoveDots();
-  // drawClocks();
-  // updateClocks();
+  //drawClocks();
+  //updateClocks();
+  
+
   requestAnimationFrame(loop);
+}
+
+function getCursorPosition(canvas, event) {
+  const rect = canvas.getBoundingClientRect()
+  console.log(event.clientX)
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+  return {x: x-12, y: y}
 }
 
 function updateClocks() {
