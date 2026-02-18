@@ -505,14 +505,28 @@ class Cannibal extends Piece{
 
   constructor(x, y, pieces, color) {
     super(x, y, color)
-    this.pieces = Piece.flatten(pieces)
-    for (const p of pieces){
+    this.pieces = Cannibal.extractPieces(pieces)
+    for (const p of this.pieces){
       p.x = x;
       p.y = y;
     }
     this.label = this.initLabel()
     this.hasMoved = true;
   } 
+
+  static extractPieces(pieces){
+    const p = []
+    for (const ps of pieces){
+      if (ps instanceof Cannibal){
+        for (const pcs of Cannibal.extractPieces(ps.pieces)){
+          p.push(pcs)
+        }      
+      } else {
+        p.push(ps.copy())
+      }
+    }
+    return p;
+  }
 
   copy(x, y){
     const ps = []
@@ -616,27 +630,10 @@ class Game {
 
   initBoard(){
     this.board = []
-    this.kinglessBoard = []
     for (let y = 0; y < SIZE; y++) {
       this.board[y] = []
-      this.kinglessBoard[y] = []
       for (let x = 0; x < SIZE; x++) {
         this.board[y][x] = this.createPieceByStartSquare(x, y);
-      }
-    }
-
-    this.updateKinglessBoard();
-  }
-
-  updateKinglessBoard(){
-    for (let y = 0; y < SIZE; y++) {
-      for (let x = 0; x < SIZE; x++) {
-        const piece = this.board[y][x]
-        if (!piece || piece instanceof King){
-          this.kinglessBoard[y][x] = null;
-        } else {
-          this.kinglessBoard[y][x] = piece;
-        }
       }
     }
   }
@@ -664,8 +661,8 @@ class Game {
     //add new cannibal
     if (toPiece && Piece.isFriendly(piece, toPiece)){
       const pieces = []
-      pieces.push(piece.copy());
-      pieces.push(toPiece.copy());
+      pieces.push(piece);
+      pieces.push(toPiece);
       this.board[fromPos.y][fromPos.x] = null;
       const newPiece = new Cannibal(to.x, to.y, pieces, piece.getColor());
       this.board[to.y][to.x] = newPiece;
@@ -678,8 +675,30 @@ class Game {
 
     this.checkSpecialMoves(piece, fromPos)
     this.dependencyUpdates(piece, fromPos);
-    this.updateKinglessBoard();
     this.tickState(); 
+    this.checkForMate();
+  }
+
+  checkForMate(){
+    let legalMoves = 0;
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const thePiece = this.board[y][x]
+        if (!thePiece) continue;
+        if (thePiece.getColor() != this.currentPlayer) continue;
+        const moves = thePiece.getValidMoves(game.board, true);
+        legalMoves += moves.length;
+      }
+    }
+    if (legalMoves === 0){
+      const otherColor = this.currentPlayer === "white" ? "black" : "white"
+      const king = this.getKing(this.currentPlayer)
+      if (this.playerSees(otherColor, this.board, {x: king.x, y: king.y})){
+        console.log("checkmate")
+      } else {
+        console.log("stalemate")
+      }
+    }
   }
 
   checkSpecialMoves(piece, fromPos){
