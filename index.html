@@ -147,16 +147,24 @@ class Piece {
     //   32
     // ); 
     const buffer = pieceBuffers.get(name)
+    const actualTile = game.boardOrientation === 1 ? {x: this.x, y: this.y} : {x: 7-this.x, y: 7-this.y}
     if(!buffer)return
     for (let y = 0; y < buffer.length; y++) {
       for (let x = 0; x < buffer[y].length; x++) {
-        const r = buffer[y][x][0];
-        const g = buffer[y][x][1];
-        const b = buffer[y][x][2];
-        const a = buffer[y][x][3];
-
+        let r = buffer[y][x][0];
+        let g = buffer[y][x][1];
+        let b = buffer[y][x][2];
+        let a = buffer[y][x][3];
+        
+        if (game.selected === this){
+          if (r === 0 && g === 0 && b === 0){
+            r = 255;
+            g = 255;
+            b = 255;
+          }
+        }
         ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
-        ctx.fillRect(boardOffset.x + this.x * TILE + x, boardOffset.y + this.y * TILE + y, 1, 1);
+        ctx.fillRect(boardOffset.x + actualTile.x * TILE + x, boardOffset.y + actualTile.y * TILE + y, 1, 1);
       }
     } 
 
@@ -596,6 +604,7 @@ class Game {
   }
 
   clearPath(board, from, to) {
+    if (from.x === to.x && from.y === to.y) return false;
     const dx = Math.sign(to.x - from.x);
     const dy = Math.sign(to.y - from.y);
 
@@ -711,25 +720,8 @@ class Game {
         }
       }
     }
-    
-    
+      
     return false;
-    
-    // for (let y = 0; y < SIZE; y++) {
-    //   for (let x = 0; x < SIZE; x++) {
-    //     const thePiece = hypothetical[y][x]
-    //     if (!thePiece) continue;
-    //     if (thePiece.getColor() === piece.getColor()) continue;
-    //     if (thePiece instanceof Cannibal)console.log(thePiece)
-    //     const hypotheticalMoves = thePiece.getValidMoves(hypothetical, false)
-    //     for (const p of hypotheticalMoves){
-    //       const seenPiece = hypothetical[p.y][p.x]
-    //       if (seenPiece instanceof King && Piece.isFriendly(piece, seenPiece)) return true;
-    //     }
-    //   }
-    // }
-
-    // return false;
   }
 
   dependencyUpdates(piece, fromPos){
@@ -813,7 +805,8 @@ class Game {
   }
 
   boardToScreen(x, y){
-    return {sx: 32*x+boardOffset.x, sy: 32*y + boardOffset.y}
+    const boardOr = this.boardOrientation === 1 ? {x: x, y: y} : {x: 7-x, y: 7-y}
+    return {sx: 32*boardOr.x+boardOffset.x, sy: 32*boardOr.y + boardOffset.y}
   }
 
   renderPieces(){
@@ -851,26 +844,39 @@ function inBounds(x, y) {
 
 /* ---------- Input ---------- */
 
-canvas.addEventListener("click", e => {
+canvas.addEventListener("mousedown", e => {
   const { sx, sy } = game.screenToBoard(getCursorPosition(canvas, e));
-  const x = sx
-  const y = sy  
+  const x = game.boardOrientation === 1 ? sx : 7-sx
+  const y = game.boardOrientation === 1 ? sy : 7-sy
+
   if (!inBounds(x, y)) return;
   
-  if (game.selected && game.selected.isMoveLegal(game.board, { x, y }, true)) {
-    //sound stuff
-    if (!game.board[y][x]){
-      moveSound.play();
+  if (game.selected){
+    if (game.selected.x === x && game.selected.y === y){
+      game.selected = null;
+      game.validMoves = [];
+      return;
     }
-    else if (game.board[y][x].getColor() === game.currentPlayer){
-      cannibalSound.play();
+    if(game.selected.isMoveLegal(game.board, { x, y }, true)) {
+      //sound stuff
+      if (!game.board[y][x]){
+        moveSound.play();
+      }
+      else if (game.board[y][x].getColor() === game.currentPlayer){
+        cannibalSound.play();
+      }
+      else if (game.board[y][x].getColor() !== game.currentPlayer){
+        captureSound.play();
+      }
+      game.executeMove(game.selected, { x, y})
+      
+    }else if (game.board[y][x].getColor() === game.currentPlayer) {
+      game.selected = game.board[y][x];
+      game.validMoves = game.selected.getValidMoves(game.board, true);
     }
-    else if (game.board[y][x].getColor() !== game.currentPlayer){
-      captureSound.play();
-    }
-    game.executeMove(game.selected, { x, y})
-    
-  } else if (game.board[y][x].getColor() === game.currentPlayer) {
+  }
+
+  else if (game.board[y][x].getColor() === game.currentPlayer) {
     game.selected = game.board[y][x];
     game.validMoves = game.selected.getValidMoves(game.board, true);
   }
@@ -918,7 +924,6 @@ function loop() {
 
 function getCursorPosition(canvas, event) {
   const rect = canvas.getBoundingClientRect()
-  console.log(event.clientX)
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
   return {x: x-12, y: y}
