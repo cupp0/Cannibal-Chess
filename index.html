@@ -25,15 +25,16 @@
 </head>
 <body>
 
-<canvas id="board" width="900" height="600"></canvas>
+<canvas id="board" width = "268" height = "396"></canvas>
 
 <script>
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
+const UI_WIDTH  = 512;
+const UI_HEIGHT = 396; // extra space for UI
 const SIZE = 8;
 const TILE = 32;
-const boardOffset = {x: 320, y: 180}
+const boardOffset = {x: 6, y: 64}
 const pieceOrder = ['b', 'n', 'p', 'q', 'r']
 const pieceBuffers = new Map()
 const imgBuffers = new Map()
@@ -135,17 +136,7 @@ class Piece {
 
   render(){
     const name = this.getColor()+"-"+(this.getLabel().toLowerCase())
-    // if (!imgBuffers.get(String(name))){
-      
-    //   return
-    // }
-    // ctx.drawImage(
-    //   imgBuffers.get(name),
-    //   this.x * TILE,
-    //   this.y * TILE,
-    //   32,
-    //   32
-    // ); 
+
     const buffer = pieceBuffers.get(name)
     const actualTile = game.boardOrientation === 1 ? {x: this.x, y: this.y} : {x: 7-this.x, y: 7-this.y}
     if(!buffer)return
@@ -242,8 +233,8 @@ class Pawn extends Piece{
     this.dir = this.color === "white" ? -1 : 1
   }
 
-  copy(){
-    return new Pawn(this.x, this.y, this.getColor())
+  copy(x, y){
+    return new Pawn(x, y, this.getColor())
   }
 
   sees(board, square){
@@ -307,8 +298,8 @@ class Knight extends Piece{
     this.setLabel("n")
   }
 
-  copy(){
-    return new Knight(this.x, this.y, this.getColor())
+  copy(x, y){
+    return new Knight(x, y, this.getColor())
   }
 
   sees(board, square){
@@ -342,8 +333,8 @@ class Bishop extends Piece{
     this.setLabel("b")
   }
 
-  copy(){
-    return new Bishop(this.x, this.y, this.getColor())
+  copy(x, y){
+    return new Bishop(x, y, this.getColor())
   }
 
   sees(board, square){
@@ -377,8 +368,8 @@ class Rook extends Piece{
     this.setLabel("r")
   }
 
-  copy(){
-    return new Rook(this.x, this.y, this.getColor())
+  copy(x, y){
+    return new Rook(x, y, this.getColor())
   }
 
   sees(board, square){
@@ -412,8 +403,8 @@ class Queen extends Piece{
     this.setLabel("q")
   }
 
-  copy(){
-    return new Queen(this.x, this.y, this.getColor())
+  copy(x, y){
+    return new Queen(x, y, this.getColor())
   }
 
   sees(board, square){
@@ -454,8 +445,8 @@ class King extends Piece{
     this.setLabel("k")
   }
 
-  copy(){
-    return new King(this.x, this.y, this.getColor())
+  copy(x, y){
+    return new King(x, y, this.getColor())
   }
 
   sees(board, square){
@@ -515,17 +506,20 @@ class Cannibal extends Piece{
   constructor(x, y, pieces, color) {
     super(x, y, color)
     this.pieces = Piece.flatten(pieces)
-    this.move({x: x, y: y})
+    for (const p of pieces){
+      p.x = x;
+      p.y = y;
+    }
     this.label = this.initLabel()
     this.hasMoved = true;
   } 
 
-  copy(){
+  copy(x, y){
     const ps = []
     for (const p of this.pieces){
-      ps.push(p.copy())
+      ps.push(p.copy(x, y))
     }
-    return new Cannibal(this.x, this.y, ps, this.getColor())
+    return new Cannibal(x, y, ps, this.getColor())
   }
 
   move(to){
@@ -670,9 +664,11 @@ class Game {
     //add new cannibal
     if (toPiece && Piece.isFriendly(piece, toPiece)){
       const pieces = []
-      pieces.push(piece);
-      pieces.push(toPiece);
-      this.board[to.y][to.x] = new Cannibal(to.x, to.y, pieces, piece.getColor());
+      pieces.push(piece.copy());
+      pieces.push(toPiece.copy());
+      this.board[fromPos.y][fromPos.x] = null;
+      const newPiece = new Cannibal(to.x, to.y, pieces, piece.getColor());
+      this.board[to.y][to.x] = newPiece;
     }   
     
     //normal move
@@ -684,7 +680,6 @@ class Game {
     this.dependencyUpdates(piece, fromPos);
     this.updateKinglessBoard();
     this.tickState(); 
-    this.storeNewPosition();
   }
 
   checkSpecialMoves(piece, fromPos){
@@ -807,7 +802,9 @@ class Game {
         const thePiece = this.board[y][x];
 
         if (thePiece){
-          stored[y][x] = thePiece.copy();
+          stored[y][x] = thePiece.copy(x, y);
+        } else {
+          stored[y][x] = null;
         }
       }
     }
@@ -826,19 +823,12 @@ class Game {
   }
 
   drawBoard() {
-    ctx.fillStyle = "rgba(0, 10, 10, 255)";
+    ctx.fillStyle = "rgba(20, 20, 20, 255)";
     ctx.fillRect(boardOffset.x -6, boardOffset.y-6, 268, 268);
     for (let y = 0; y < SIZE; y++) {
       for (let x = 0; x < SIZE; x++) {
-        //const { sx, sy } = this.boardToScreen(x, y);
         ctx.fillStyle = (x + y) % 2 === 0 ? "rgba(110, 110, 110, 255)" : "rgba(40, 35, 30, 255)";
         ctx.fillRect(boardOffset.x + x * TILE,boardOffset.y + y * TILE, TILE, TILE);
-
-        if (this.selected && this.selected.x === x && this.selected.y === y) {
-          ctx.strokeStyle = "yellow";
-          ctx.lineWidth = 4;
-          //ctx.strokeRect(boardOffset.x + sx * TILE + 2, boardOffset.y + sy * TILE + 2, TILE - 4, TILE - 4);
-        }
       }
     }
 
@@ -906,8 +896,8 @@ canvas.addEventListener("mousemove", e =>{
   const y = game.boardOrientation === 1 ? sy : 7-sy
 
   if (!inBounds(x, y)) return;
-  
-  if (game.board[y][x]) {
+
+  if (!game.board[y][x]) {
     game.hovered = null;
     return;
   }
@@ -942,7 +932,7 @@ canvas.addEventListener("mousedown", e => {
         captureSound.play();
       }
       game.executeMove(game.selected, { x, y})
-      
+      game.storeNewPosition();
     }else if (game.board[y][x].getColor() === game.currentPlayer) {
       game.selected = game.board[y][x];
       game.validMoves = game.selected.getValidMoves(game.board, true);
@@ -964,17 +954,19 @@ window.addEventListener("keydown", e => {
     e.preventDefault();
   }
   if (e.key === "ArrowLeft"){
-    if (game.boardIndex < game.history.length-1)
-    game.boardIndex++;
-    game.board = (game.history[game.history.length-(1+game.boardIndex)])
+    if (game.boardIndex < game.history.length-1){
+      game.boardIndex++;
+      game.board = game.history[game.history.length-(1+game.boardIndex)]
+    }
   }
 
   if (e.key === "ArrowRight"){
-    if (game.boardIndex > 0)
-    game.boardIndex--;
-    game.board = (game.history[game.history.length-(1+game.boardIndex)])
-
+    if (game.boardIndex > 0){
+      game.boardIndex--;
+      game.board = game.history[game.history.length-(1+game.boardIndex)]
+    }
   }
+
   // if (waitingForPromotionSelection === true){
   //   if(e.key === "q" || e.key === "r" || e.key === "n" || e.key === "b"){
   //     completePromotion(e.key)
