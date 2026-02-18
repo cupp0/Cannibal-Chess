@@ -156,8 +156,16 @@ class Piece {
         let b = buffer[y][x][2];
         let a = buffer[y][x][3];
         
+        if (game.hovered === this){
+          if (buffer[y][x][0] === 0 && buffer[y][x][1] === 0 && buffer[y][x][2] === 0){
+            r = 125;
+            g = 125;
+            b = 125;
+          }
+        }
+
         if (game.selected === this){
-          if (r === 0 && g === 0 && b === 0){
+          if (buffer[y][x][0] === 0 && buffer[y][x][1] === 0 && buffer[y][x][2] === 0){
             r = 255;
             g = 255;
             b = 255;
@@ -234,6 +242,10 @@ class Pawn extends Piece{
     this.dir = this.color === "white" ? -1 : 1
   }
 
+  copy(){
+    return new Pawn(this.x, this.y, this.getColor())
+  }
+
   sees(board, square){
     const dx = square.x - this.x
     const dy = square.y - this.y
@@ -295,6 +307,10 @@ class Knight extends Piece{
     this.setLabel("n")
   }
 
+  copy(){
+    return new Knight(this.x, this.y, this.getColor())
+  }
+
   sees(board, square){
     const target = board[square.y][square.x];
     if (this.isFriendlyKing(target))return false;
@@ -324,6 +340,10 @@ class Bishop extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("b")
+  }
+
+  copy(){
+    return new Bishop(this.x, this.y, this.getColor())
   }
 
   sees(board, square){
@@ -357,6 +377,10 @@ class Rook extends Piece{
     this.setLabel("r")
   }
 
+  copy(){
+    return new Rook(this.x, this.y, this.getColor())
+  }
+
   sees(board, square){
     const target = board[square.y][square.x];    
     if (this.isFriendlyKing(target))return false;
@@ -386,6 +410,10 @@ class Queen extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("q")
+  }
+
+  copy(){
+    return new Queen(this.x, this.y, this.getColor())
   }
 
   sees(board, square){
@@ -424,6 +452,10 @@ class King extends Piece{
   constructor(x, y, color){
     super(x, y, color)
     this.setLabel("k")
+  }
+
+  copy(){
+    return new King(this.x, this.y, this.getColor())
   }
 
   sees(board, square){
@@ -487,6 +519,14 @@ class Cannibal extends Piece{
     this.label = this.initLabel()
     this.hasMoved = true;
   } 
+
+  copy(){
+    const ps = []
+    for (const p of this.pieces){
+      ps.push(p.copy())
+    }
+    return new Cannibal(this.x, this.y, ps, this.getColor())
+  }
 
   move(to){
     this.x = to.x;
@@ -554,13 +594,17 @@ class Game {
     this.boardOrientation = 1,
     this.currentPlayer = "white",
     this.selected = null,
+    this.hovered = null,
     this.validMoves = [],
     this.whiteTime = 5 * 60,
     this.blackTime = 5 * 60,
     this.lastTick = performance.now(),
     this.waitingForPromotionSelection = false,
     this.whiteVision = [],                    
-    this.blackVision = []             
+    this.blackVision = [],
+    this.boardIndex = 0,
+    this.history = [];
+    this.storeNewPosition();         
   }
 
   //~ ~ ~ ~ ~ ~ ~ ~ ~ INIT ~ ~ ~ ~ ~ ~ ~ ~ ~\\
@@ -640,6 +684,7 @@ class Game {
     this.dependencyUpdates(piece, fromPos);
     this.updateKinglessBoard();
     this.tickState(); 
+    this.storeNewPosition();
   }
 
   checkSpecialMoves(piece, fromPos){
@@ -687,10 +732,6 @@ class Game {
       }
     }
     return false;
-  }
-
-  getHypotheticalBoard(piece, toSquare){
-
   }
 
   resultsInEnemyCheck(theBoard, piece, to){
@@ -758,6 +799,22 @@ class Game {
     this.validMoves = [];
   }
 
+  storeNewPosition(){
+    const stored = []
+    for (let y = 0; y < SIZE; y++) {
+      stored[y] = []
+      for (let x = 0; x < SIZE; x++) {
+        const thePiece = this.board[y][x];
+
+        if (thePiece){
+          stored[y][x] = thePiece.copy();
+        }
+      }
+    }
+
+    this.history.push(stored)
+  }
+
   screenToBoard(pos) {
     const sx = Math.floor((pos.x-boardOffset.x) / 32);  
     const sy = Math.floor((pos.y-boardOffset.y) / 32);  
@@ -769,12 +826,12 @@ class Game {
   }
 
   drawBoard() {
-    ctx.fillStyle = "rgba(0, 0, 0, 255)";
+    ctx.fillStyle = "rgba(0, 10, 10, 255)";
     ctx.fillRect(boardOffset.x -6, boardOffset.y-6, 268, 268);
     for (let y = 0; y < SIZE; y++) {
       for (let x = 0; x < SIZE; x++) {
         //const { sx, sy } = this.boardToScreen(x, y);
-        ctx.fillStyle = (x + y) % 2 === 0 ? "rgba(100, 100, 100, 255)" : "rgba(20, 20, 20, 255)";
+        ctx.fillStyle = (x + y) % 2 === 0 ? "rgba(110, 110, 110, 255)" : "rgba(40, 35, 30, 255)";
         ctx.fillRect(boardOffset.x + x * TILE,boardOffset.y + y * TILE, TILE, TILE);
 
         if (this.selected && this.selected.x === x && this.selected.y === y) {
@@ -843,6 +900,22 @@ function inBounds(x, y) {
 }
 
 /* ---------- Input ---------- */
+canvas.addEventListener("mousemove", e =>{
+  const { sx, sy } = game.screenToBoard(getCursorPosition(canvas, e));
+  const x = game.boardOrientation === 1 ? sx : 7-sx
+  const y = game.boardOrientation === 1 ? sy : 7-sy
+
+  if (!inBounds(x, y)) return;
+  
+  if (game.board[y][x]) {
+    game.hovered = null;
+    return;
+  }
+
+  if(game.board[y][x] && game.currentPlayer === game.board[y][x].getColor()){
+    game.hovered = game.board[y][x]
+  }
+})
 
 canvas.addEventListener("mousedown", e => {
   const { sx, sy } = game.screenToBoard(getCursorPosition(canvas, e));
@@ -887,11 +960,26 @@ window.addEventListener("keydown", e => {
   if (e.key === "f"){
     game.boardOrientation *= -1
   }
-  if (waitingForPromotionSelection === true){
-    if(e.key === "q" || e.key === "r" || e.key === "n" || e.key === "b"){
-      completePromotion(e.key)
-    }
+  if (e.key.startsWith("Arrow")){
+    e.preventDefault();
   }
+  if (e.key === "ArrowLeft"){
+    if (game.boardIndex < game.history.length-1)
+    game.boardIndex++;
+    game.board = (game.history[game.history.length-(1+game.boardIndex)])
+  }
+
+  if (e.key === "ArrowRight"){
+    if (game.boardIndex > 0)
+    game.boardIndex--;
+    game.board = (game.history[game.history.length-(1+game.boardIndex)])
+
+  }
+  // if (waitingForPromotionSelection === true){
+  //   if(e.key === "q" || e.key === "r" || e.key === "n" || e.key === "b"){
+  //     completePromotion(e.key)
+  //   }
+  // }
 });
 
 /* ---------- Loop ---------- */
