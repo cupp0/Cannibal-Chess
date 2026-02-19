@@ -24,9 +24,7 @@
   </style>
 </head>
 <body>
-
 <canvas id="board" width = "268" height = "396"></canvas>
-
 <script>
 
 class Piece {
@@ -80,20 +78,6 @@ class Piece {
 
   getPieces(){
     return this;
-  }
-
-  static flatten(pieces){
-    const ps = []
-    for (const p of pieces){
-      if (p instanceof Cannibal){
-        for (const pees of Piece.flatten(p.pieces)){
-          ps.push(pees)
-        }
-      } else {
-        ps.push(p)
-      }
-    }
-    return ps;
   }
 
   static isFriendly(p1, p2){
@@ -354,12 +338,6 @@ class Cannibal extends Piece{
   //for the cannibal
   isMoveLegal(theBoard, to){
     const hypothetical = Game.copyBoard(theBoard)
-    // for (let y = 0; y < SIZE; y++) {
-    //   hypothetical[y] = []
-    //   for (let x = 0; x < SIZE; x++) {
-    //     hypothetical[y][x] = theBoard[y][x]
-    //   }
-    // }
     for (const p of this.pieces){
       hypothetical[this.y][this.x] = p;
       if (p.isMoveLegal(hypothetical, to))return true;
@@ -577,7 +555,6 @@ class Game {
   }
 
   resultsInEnemyCheck(theBoard, piece, to){
-    //build hypothetical board
     const hypothetical = Game.copyBoard(theBoard);
     hypothetical[piece.y][piece.x] = null;
     hypothetical[to.y][to.x] = piece; 
@@ -609,6 +586,16 @@ class Game {
     this.renderPieces();
   }
 
+  renderPieces(){
+    for (const row of this.board){
+      for (const piece of row){
+        if (piece instanceof Piece){
+          piece.render();
+        }
+      }
+    }
+  }
+
   drawMoveDots() {
     ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
 
@@ -636,16 +623,6 @@ class Game {
   boardToScreen(x, y){
     const boardOr = this.boardOrientation === 1 ? {x: x, y: y} : {x: 7-x, y: 7-y}
     return {sx: TILE*boardOr.x+boardOffset.x, sy: TILE*boardOr.y + boardOffset.y}
-  }
-
-  renderPieces(){
-    for (const row of this.board){
-      for (const piece of row){
-        if (piece instanceof Piece){
-          piece.render();
-        }
-      }
-    }
   }
 
   //coordinates of the square that was pressed
@@ -689,6 +666,29 @@ class Game {
 
     if(this.board[y][x] && this.currentPlayer === this.board[y][x].getColor()){
       this.hovered = this.board[y][x]
+    }
+  }
+
+  onKeyDown(event){
+    if (event.key.startsWith("Arrow")) event.preventDefault();
+    switch(event.key){
+      case "f" : this.boardOrientation *= -1; return;
+      case "ArrowLeft" : this.tryRetreat(); return;
+      case "ArrowRight" : this.tryAdvance(); return;
+    }
+  }
+
+  tryAdvance(){
+    if (this.boardIndex > 0){
+      this.boardIndex--;
+      this.board = this.history[this.history.length-(1+this.boardIndex)]
+    }
+  }
+
+  tryRetreat(){
+    if (this.boardIndex < this.history.length-1){
+      this.boardIndex++;
+      this.board = this.history[this.history.length-(1+this.boardIndex)]
     }
   }
 
@@ -825,31 +825,7 @@ canvas.addEventListener("mousedown", e => {
 });
 
 window.addEventListener("keydown", e => {
-  if (e.key === "f"){
-    game.boardOrientation *= -1
-  }
-  if (e.key.startsWith("Arrow")){
-    e.preventDefault();
-  }
-  if (e.key === "ArrowLeft"){
-    if (game.boardIndex < game.history.length-1){
-      game.boardIndex++;
-      game.board = game.history[game.history.length-(1+game.boardIndex)]
-    }
-  }
-
-  if (e.key === "ArrowRight"){
-    if (game.boardIndex > 0){
-      game.boardIndex--;
-      game.board = game.history[game.history.length-(1+game.boardIndex)]
-    }
-  }
-
-  if (game.waitingForPromotionSelection === true){
-    if(e.key === "q" || e.key === "r" || e.key === "n" || e.key === "b"){
-      game.completePromotion(e.key)
-    }
-  }
+  game.onKeyDown(e)
 });
 
 function getCursorPosition(canvas, event) {
@@ -861,6 +837,15 @@ function getCursorPosition(canvas, event) {
 
 /* ---------- Loop ---------- */
 function loop() {
+  drawBackground();
+  game.drawBoard();
+  game.drawMoveDots();
+  //game.updateClocks();
+  //game.drawClocks();
+  requestAnimationFrame(loop);
+}
+
+function drawBackground(){
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   flagSpeed++;
   if (flagSpeed%5 === 0){
@@ -877,11 +862,6 @@ function loop() {
       canvas.height+90
     ); 
   };
-  game.drawBoard();
-  game.drawMoveDots();
-  //game.updateClocks();
-  //game.drawClocks();
-  requestAnimationFrame(loop);
 }
 
 </script>
