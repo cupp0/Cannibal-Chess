@@ -28,102 +28,6 @@
 <canvas id="board" width = "268" height = "396"></canvas>
 
 <script>
-const canvas = document.getElementById("board");
-const ctx = canvas.getContext("2d");
-const UI_WIDTH  = 512;
-const UI_HEIGHT = 396; // extra space for UI
-const SIZE = 8;
-const TILE = 32;
-const boardOffset = {x: 6, y: 64}
-const pieceOrder = ['b', 'n', 'p', 'q', 'r']
-const pieceBuffers = new Map()
-const imgBuffers = new Map()
-const flagImages = []
-initBuffers();
-loadFlag();
-let flagSpeed = 0;
-let flagSample = 1;
-
-function loadFlag(){
-  for (let i = 1; i < 1000; i++){
-    const img = new Image();
-    const name = "flag"+String(i);
-    img.src = `assets/flag/${name}.png`;
-    img.onload = function() {
-      flagImages[i] = img;
-    }
-  }
-}
-
-function initBuffers(){
-  for (const i of generateCombinations(5)){
-    let pieceComb = "";
-    for (const j of i){
-      pieceComb += pieceOrder[j];
-    }
-
-    const whiteLabel = "white-"+pieceComb
-    const blackLabel = "black-"+pieceComb
-    getBuffer(whiteLabel, imgLoadCallback);
-    getBuffer(blackLabel, imgLoadCallback);
-  }
-  getBuffer("white-k", imgLoadCallback);
-  getBuffer("black-k", imgLoadCallback);
-}
-
-function getBuffer(name, callback){
-  const img = new Image();
-  img.src = `assets/pieces/${name}.png`;
-  img.onload = function() {
-    callback(name, img);
-    imgBuffers.set(name, img)
-  };
-}
-
-function imgLoadCallback(name, img){
-  const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = img.width;
-  tempCanvas.height = img.height;
-  const tempCtx = tempCanvas.getContext("2d");
-  tempCtx.drawImage(img, 0, 0);
-  const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
-  const pixels = imageData.data;
-  const buffer = []
-  for (let y = 0; y < img.height; y++) {
-    buffer[y] = []
-    for (let x = 0; x < img.width; x++) {
-      const i = (y * img.width + x) * 4;
-      let r = pixels[i];
-      let g = pixels[i + 1];
-      let b = pixels[i + 2];
-      let a = pixels[i + 3] / 255; // normalize alpha 0-1
-      buffer[y][x] = [r, g, b, a];
-    }
-  }
-  pieceBuffers.set(String(name), buffer)
-}
-
-
-function generateCombinations(n) {
-  const result = [];
-
-  function backtrack(start, combo) {
-    if (combo.length > 0) {
-      result.push([...combo]);
-    }
-
-    for (let i = start; i < n; i++) {
-      combo.push(i);
-      backtrack(i + 1, combo);
-      combo.pop();
-    }
-  }
-
-  backtrack(0, []);
-  return result;
-}
-
-const sprites = {};
 
 class Piece {
   label;
@@ -132,41 +36,28 @@ class Piece {
     this.y = y;
     this.color = color;
     this.hasMoved = false;
-  }    
+  } 
 
   render(){
     const name = this.getColor()+"-"+(this.getLabel().toLowerCase())
-
     const buffer = pieceBuffers.get(name)
     const actualTile = game.boardOrientation === 1 ? {x: this.x, y: this.y} : {x: 7-this.x, y: 7-this.y}
-    if(!buffer)return
+    if(!buffer)return;
     for (let y = 0; y < buffer.length; y++) {
       for (let x = 0; x < buffer[y].length; x++) {
-        let r = buffer[y][x][0];
-        let g = buffer[y][x][1];
-        let b = buffer[y][x][2];
-        let a = buffer[y][x][3];
-        
-        if (game.hovered === this){
-          if (buffer[y][x][0] === 0 && buffer[y][x][1] === 0 && buffer[y][x][2] === 0){
-            r = 125;
-            g = 125;
-            b = 125;
-          }
+        const fill = {r: buffer[y][x][0], g: buffer[y][x][1], b: buffer[y][x][2], a: buffer[y][x][3]}        
+        //hover makes outline grey
+        if (game.hovered === this && game.selected != this && fill.r + fill.g + fill.b === 0){
+          fill.r = 127; fill.g = 127; fill.b = 127;
         }
-
-        if (game.selected === this){
-          if (buffer[y][x][0] === 0 && buffer[y][x][1] === 0 && buffer[y][x][2] === 0){
-            r = 255;
-            g = 255;
-            b = 255;
-          }
+        //selected makes outline white
+        if (game.selected === this && fill.r + fill.g + fill.b === 0){
+          fill.r = 255; fill.g = 255; fill.b = 255;
         }
-        ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+        ctx.fillStyle = `rgba(${fill.r},${fill.g},${fill.b},${fill.a})`;
         ctx.fillRect(boardOffset.x + actualTile.x * TILE + x, boardOffset.y + actualTile.y * TILE + y, 1, 1);
       }
     } 
-
   }
 
   move(pos){
@@ -200,6 +91,7 @@ class Piece {
     }
     return ps;
   }
+
   static isFriendly(p1, p2){
     return p1.getColor() === p2.getColor();
   }
@@ -220,7 +112,6 @@ class Piece {
     }
     return moves;
   }
-
 }
 
 class Pawn extends Piece{
@@ -260,25 +151,7 @@ class Pawn extends Piece{
   }
 
   isMoveLegal(board, to, isPrimary){
-    const dx = to.x - this.x
-    const dy = to.y - this.y
-    if (Math.abs(dx) > 1 || Math.abs(dy) > 2)return false;
-    if (Math.sign(dy) !== Math.sign(this.dir)) return false;
-    if (Math.abs(dx) === 1 && Math.abs(dy) === 2)return false;
-
-    const target = board[to.y][to.x];
-    if (this.isFriendlyKing(target))return false;
-    if (target && dx === 0) return false;
-    if ((this.hasMoved === true) && Math.abs(dy) === 2) return false;
-
-
-    //capturing/eating
-    if (Math.abs(dx) === 1 && dy === this.dir){
-      if(!target){
-        if (!this.canEnPassant(board, to)) return false;
-      } 
-    }
-
+    if (!this.sees(board, to)) return false;
     if (!isPrimary) return true;
     if (game.resultsInEnemyCheck(board, this, to)) return false;    
     return true;
@@ -313,13 +186,7 @@ class Knight extends Piece{
   }
 
   isMoveLegal(board, to, isPrimary){
-    const target = board[to.y][to.x];
-    if (this.isFriendlyKing(target))return false;
-
-    const absX = Math.abs(to.x-this.x);
-    const absY = Math.abs(to.y-this.y);
-    if (!((absX === 1 && absY === 2) || (absX === 2 && absY === 1))) return false;
-
+    if (!this.sees(board, to)) return false;
     if (!isPrimary) return true;
     if (game.resultsInEnemyCheck(board, this, to)) return false;    
     return true;
@@ -348,14 +215,7 @@ class Bishop extends Piece{
   }
 
   isMoveLegal(board, to, isPrimary){
-    const target = board[to.y][to.x];    
-    if (this.isFriendlyKing(target))return false;
-
-    const absX = Math.abs(to.x-this.x);
-    const absY = Math.abs(to.y-this.y);
-    if (absX !== absY) return false;
-    if (!game.clearPath(board, {x: this.x, y: this.y}, to)) return false;
-
+    if (!this.sees(board, to)) return false;
     if (!isPrimary) return true;
     if (game.resultsInEnemyCheck(board, this, to)) return false;    
     return true; 
@@ -383,14 +243,7 @@ class Rook extends Piece{
   }
 
   isMoveLegal(board, to, isPrimary){
-    const target = board[to.y][to.x];    
-    if (this.isFriendlyKing(target))return false;
-
-    const dx = to.x-this.x;
-    const dy = to.y-this.y;
-    if (dx !== 0 && dy !== 0) return false;
-    if (!game.clearPath(board, {x: this.x, y: this.y}, to)) return false;
-    
+    if (!this.sees(board, to)) return false;
     if (!isPrimary) return true;
     if (game.resultsInEnemyCheck(board, this, to)) return false;
     return true;
@@ -422,17 +275,7 @@ class Queen extends Piece{
   }
 
   isMoveLegal(board, to, isPrimary){
-    const target = board[to.y][to.x];    
-    if (this.isFriendlyKing(target))return false;
-
-    const absX = Math.abs(to.x-this.x);
-    const absY = Math.abs(to.y-this.y);
-    const dx = to.x-this.x;
-    const dy = to.y-this.y;
-
-    if ((absX !== absY) && (dx !== 0 && dy !== 0)) return false;
-    if (!game.clearPath(board, {x: this.x, y: this.y}, to)) return false;
-    
+    if (!this.sees(board, to)) return false;
     if (!isPrimary) return true;
     if (game.resultsInEnemyCheck(board, this, to)) return false;
     return true; 
@@ -464,17 +307,7 @@ class King extends Piece{
   }
 
   isMoveLegal(board, to, isPrimary){
-    const toPiece = board[to.y][to.x];
-
-    if (toPiece && Piece.isFriendly(this, toPiece)) return false;
-    const dx = Math.abs(to.x-this.x);
-    const dy = Math.abs(to.y-this.y);
-
-    if (dy > 1) return false;
-    if (dx > 1){
-      if (!this.canCastle(board, to)) return false;
-    }
-
+    if (!this.sees(board, to)) return false;
     if (!isPrimary) return true;
     if (game.resultsInEnemyCheck(board, this, to)) return false;
     return true; 
@@ -522,7 +355,9 @@ class Cannibal extends Piece{
           p.push(pcs)
         }      
       } else {
-        p.push(ps.copy())
+        const newP = ps.copy();
+        newP.hasMoved = true;
+        p.push(newP)
       }
     }
     return p;
@@ -570,13 +405,11 @@ class Cannibal extends Piece{
 
   isMoveLegal(theBoard, to, isPrimary){
     for (const p of this.pieces){
-
       const hypothetical = []
       for (let y = 0; y < SIZE; y++) {
         hypothetical[y] = []
         for (let x = 0; x < SIZE; x++) {
           const thePiece = theBoard[y][x];
-
           if (thePiece !== this){
             hypothetical[y][x] = theBoard[y][x]
           } else {
@@ -584,7 +417,6 @@ class Cannibal extends Piece{
           }
         }
       }
-
 
       if (p.isMoveLegal(hypothetical, to, false)){
         if (game.resultsInEnemyCheck(hypothetical, this, to))return false;
@@ -657,7 +489,6 @@ class Game {
   executeMove(piece, to){
     const fromPos = {x: piece.x, y: piece.y}
     const toPiece = this.board[to.y][to.x];
-
     //add new cannibal
     if (toPiece && Piece.isFriendly(piece, toPiece)){
       const pieces = []
@@ -667,7 +498,6 @@ class Game {
       const newPiece = new Cannibal(to.x, to.y, pieces, piece.getColor());
       this.board[to.y][to.x] = newPiece;
     }   
-    
     //normal move
     else {
       piece.move(to)
@@ -775,7 +605,6 @@ class Game {
         }
       }
     }
-      
     return false;
   }
 
@@ -802,9 +631,6 @@ class Game {
         }
       }  
     }
-
-    //update kingless board
-
   }
 
   tickState(){
@@ -829,16 +655,6 @@ class Game {
     }
 
     this.history.push(stored)
-  }
-
-  screenToBoard(pos) {
-    const sx = Math.floor((pos.x-boardOffset.x) / 32);  
-    const sy = Math.floor((pos.y-boardOffset.y) / 32);  
-
-    return {
-      sx: sx,
-      sy: sy
-    };
   }
 
   drawBoard() {
@@ -870,9 +686,17 @@ class Game {
     }
   }
 
+  screenToBoard(pos) {
+    const sx = Math.floor((pos.x-boardOffset.x) / TILE);  
+    const sy = Math.floor((pos.y-boardOffset.y) / TILE);  
+    const x = this.boardOrientation === 1 ? sx : 7-sx
+    const y = this.boardOrientation === 1 ? sy : 7-sy
+    return {x: x, y: y}
+  }
+
   boardToScreen(x, y){
     const boardOr = this.boardOrientation === 1 ? {x: x, y: y} : {x: 7-x, y: 7-y}
-    return {sx: 32*boardOr.x+boardOffset.x, sy: 32*boardOr.y + boardOffset.y}
+    return {sx: TILE*boardOr.x+boardOffset.x, sy: TILE*boardOr.y + boardOffset.y}
   }
 
   renderPieces(){
@@ -884,85 +708,181 @@ class Game {
       }
     }
   }
+
+  //coordinates of the square that was pressed
+  onMouseDown(x, y){
+    if (this.selected){
+
+      //deselect
+      if (this.selected.x === x && this.selected.y === y){
+        this.selected = null;
+        this.validMoves = [];
+        return;
+      }
+
+      //execute a move
+      if(this.selected.isMoveLegal(this.board, { x, y }, true)) {
+        if (!this.board[y][x]){
+          moveSound.play();
+        }
+        else if (this.board[y][x].getColor() === this.currentPlayer){
+          cannibalSound.play();
+        }
+        else if (this.board[y][x].getColor() !== this.currentPlayer){
+          captureSound.play();
+        }
+        this.executeMove(this.selected, { x, y})
+        this.storeNewPosition();
+        return;
+      }
+    }
+
+    if (this.board[y][x].getColor() === this.currentPlayer) {
+      this.select(this.board[y][x]);
+    }
+  }
+
+  onMouseMove(x, y){
+    if (!this.board[y][x]) {
+      this.hovered = null;
+      return;
+    }
+
+    if(this.board[y][x] && this.currentPlayer === this.board[y][x].getColor()){
+      this.hovered = this.board[y][x]
+    }
+  }
+
+  select(piece){
+    this.selected = piece
+    this.validMoves = this.selected.getValidMoves(this.board, true);
+  }
+
+  updateClocks() {
+    const now = performance.now();
+    const dt = (now - lastTick) / 1000;
+    lastTick = now;
+
+    if (currentPlayer === "white") {
+      whiteTime = Math.max(0, whiteTime - dt);
+    } else {
+      blackTime = Math.max(0, blackTime - dt);
+    }
+  }
 }
 
 /* ---------- Init ---------- */
+const canvas = document.getElementById("board");
+const ctx = canvas.getContext("2d");
+const UI_WIDTH  = 512;
+const UI_HEIGHT = 396; 
+const SIZE = 8;
+const TILE = 32;
+const boardOffset = {x: 6, y: 64}
+const pieceOrder = ['b', 'n', 'p', 'q', 'r']
+const pieceBuffers = new Map()
+const imgBuffers = new Map()
+const flagImages = []
+let flagSpeed = 0;
+let flagSample = 1;
 const game = new Game();
 let moveSound = new Audio("assets/sound/plastic1.wav");
 let captureSound = new Audio("assets/sound/plastic2.wav");
 let cannibalSound = new Audio("assets/sound/metal2.wav");
-
-
-// for (const [key, name] of Object.entries(pieceMap)) {
-//   const img = new Image();
-//   img.src = `assets/pieces/${name}.png`;
-//   img.onload = () => {
-       
-//   }
-//   sprites[key] = img; 
-// }
-
+initBuffers();
+loadFlag();
 loop();
 
+function initBuffers(){
+  for (const i of generateCombinations(5)){
+    let pieceComb = "";
+    for (const j of i){
+      pieceComb += pieceOrder[j];
+    }
+
+    const whiteLabel = "white-"+pieceComb
+    const blackLabel = "black-"+pieceComb
+    getBuffer(whiteLabel, imgLoadCallback);
+    getBuffer(blackLabel, imgLoadCallback);
+  }
+  getBuffer("white-k", imgLoadCallback);
+  getBuffer("black-k", imgLoadCallback);
+}
+
+function getBuffer(name, callback){
+  const img = new Image();
+  img.src = `assets/pieces/${name}.png`;
+  img.onload = function() {
+    callback(name, img);
+    imgBuffers.set(name, img)
+  };
+}
+
+function imgLoadCallback(name, img){
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = img.width;
+  tempCanvas.height = img.height;
+  const tempCtx = tempCanvas.getContext("2d");
+  tempCtx.drawImage(img, 0, 0);
+  const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+  const pixels = imageData.data;
+  const buffer = []
+  for (let y = 0; y < img.height; y++) {
+    buffer[y] = []
+    for (let x = 0; x < img.width; x++) {
+      const i = (y * img.width + x) * 4;
+      let r = pixels[i];
+      let g = pixels[i + 1];
+      let b = pixels[i + 2];
+      let a = pixels[i + 3] / 255; // normalize alpha 0-1
+      buffer[y][x] = [r, g, b, a];
+    }
+  }
+  pieceBuffers.set(String(name), buffer)
+}
+
+function loadFlag(){
+  for (let i = 1; i < 1000; i++){
+    const img = new Image();
+    const name = "flag"+String(i);
+    img.src = `assets/flag/${name}.png`;
+    img.onload = function() {
+      flagImages[i] = img;
+    }
+  }
+}
+
+function generateCombinations(n) {
+  const result = [];
+  function backtrack(start, combo) {
+    if (combo.length > 0) {
+      result.push([...combo]);
+    }
+    for (let i = start; i < n; i++) {
+      combo.push(i);
+      backtrack(i + 1, combo);
+      combo.pop();
+    }
+  }
+  backtrack(0, []);
+  return result;
+}
+
 function inBounds(x, y) {
-  return x >= 0 && x < 8 && y >= 0 && y < 8;
+  return x >= 0 && x < SIZE && y >= 0 && y < SIZE;
 }
 
 /* ---------- Input ---------- */
 canvas.addEventListener("mousemove", e =>{
-  const { sx, sy } = game.screenToBoard(getCursorPosition(canvas, e));
-  const x = game.boardOrientation === 1 ? sx : 7-sx
-  const y = game.boardOrientation === 1 ? sy : 7-sy
-
-  if (!inBounds(x, y)) return;
-
-  if (!game.board[y][x]) {
-    game.hovered = null;
-    return;
-  }
-
-  if(game.board[y][x] && game.currentPlayer === game.board[y][x].getColor()){
-    game.hovered = game.board[y][x]
-  }
+  const coords = game.screenToBoard(getCursorPosition(canvas, e));
+  if (!inBounds(coords.x, coords.y)) return;
+  game.onMouseMove(coords.x, coords.y)
 })
 
 canvas.addEventListener("mousedown", e => {
-  const { sx, sy } = game.screenToBoard(getCursorPosition(canvas, e));
-  const x = game.boardOrientation === 1 ? sx : 7-sx
-  const y = game.boardOrientation === 1 ? sy : 7-sy
-
-  if (!inBounds(x, y)) return;
-  
-  if (game.selected){
-    if (game.selected.x === x && game.selected.y === y){
-      game.selected = null;
-      game.validMoves = [];
-      return;
-    }
-    if(game.selected.isMoveLegal(game.board, { x, y }, true)) {
-      //sound stuff
-      if (!game.board[y][x]){
-        moveSound.play();
-      }
-      else if (game.board[y][x].getColor() === game.currentPlayer){
-        cannibalSound.play();
-      }
-      else if (game.board[y][x].getColor() !== game.currentPlayer){
-        captureSound.play();
-      }
-      game.executeMove(game.selected, { x, y})
-      game.storeNewPosition();
-    }else if (game.board[y][x].getColor() === game.currentPlayer) {
-      game.selected = game.board[y][x];
-      game.validMoves = game.selected.getValidMoves(game.board, true);
-    }
-  }
-
-  else if (game.board[y][x].getColor() === game.currentPlayer) {
-    game.selected = game.board[y][x];
-    game.validMoves = game.selected.getValidMoves(game.board, true);
-  }
-
+  const coords = game.screenToBoard(getCursorPosition(canvas, e));
+  if (!inBounds(coords.x, coords.y)) return;
+  game.onMouseDown(coords.x, coords.y);
 });
 
 window.addEventListener("keydown", e => {
@@ -986,15 +906,21 @@ window.addEventListener("keydown", e => {
     }
   }
 
-  // if (waitingForPromotionSelection === true){
-  //   if(e.key === "q" || e.key === "r" || e.key === "n" || e.key === "b"){
-  //     completePromotion(e.key)
-  //   }
-  // }
+  if (game.waitingForPromotionSelection === true){
+    if(e.key === "q" || e.key === "r" || e.key === "n" || e.key === "b"){
+      game.completePromotion(e.key)
+    }
+  }
 });
 
-/* ---------- Loop ---------- */
+function getCursorPosition(canvas, event) {
+  const rect = canvas.getBoundingClientRect()
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+  return {x: x-12, y: y}
+}
 
+/* ---------- Loop ---------- */
 function loop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   flagSpeed++;
@@ -1014,31 +940,11 @@ function loop() {
   };
   game.drawBoard();
   game.drawMoveDots();
-  //drawClocks();
-  //updateClocks();
-  
-
+  //game.updateClocks();
+  //game.drawClocks();
   requestAnimationFrame(loop);
 }
 
-function getCursorPosition(canvas, event) {
-  const rect = canvas.getBoundingClientRect()
-  const x = event.clientX - rect.left
-  const y = event.clientY - rect.top
-  return {x: x-12, y: y}
-}
-
-function updateClocks() {
-  const now = performance.now();
-  const dt = (now - lastTick) / 1000;
-  lastTick = now;
-
-  if (currentPlayer === "white") {
-    whiteTime = Math.max(0, whiteTime - dt);
-  } else {
-    blackTime = Math.max(0, blackTime - dt);
-  }
-}
 </script>
 </body>
 </html>
