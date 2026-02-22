@@ -25,6 +25,7 @@
 </head>
 <body>
 <canvas id="board" width = "268" height = "396"></canvas>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 
 class Piece {
@@ -361,34 +362,29 @@ class Game {
     this.blackVision = [],
     this.boardIndex = 0,
     this.history = [];
-    this.board = [];
+    this.board = this.initBoard();
+  }
+
+  updateBoard(data){
+    const b = JSON.parse(data);
+    for (let y = 0; y < SIZE; y++) {
+      this.board[y] = []
+      for (let x = 0; x < SIZE; x++) {
+        if (!b[y][x]) continue;
+        this.board[y][x] = this.createPieceFromObj(b[y][x])
+      }
+    }
   }
 
   initBoard(){
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString); //
-    const boardExists = urlParams.get('board');
-
-    if (!boardExists){
-      for (let y = 0; y < SIZE; y++) {
-        this.board[y] = []
-        for (let x = 0; x < SIZE; x++) {
-          this.board[y][x] = this.createPieceByStartSquare(x, y);
-        }
-      }
-      this.updateURL();
-    }
-    
-    else {
-      const b = JSON.parse(boardExists);
-      for (let y = 0; y < SIZE; y++) {
-        this.board[y] = []
-        for (let x = 0; x < SIZE; x++) {
-          if (!b[y][x]) continue;
-          this.board[y][x] = this.createPieceFromObj(b[y][x])
-        }
+    const b = []
+    for (let y = 0; y < SIZE; y++) {
+      b[y] = []
+      for (let x = 0; x < SIZE; x++) {
+        b[y][x] = this.createPieceByStartSquare(x, y);
       }
     }
+    return b;
   }
 
   createPieceFromObj(obj){
@@ -683,7 +679,7 @@ class Game {
           captureSound.play();
         }
         this.executeMove(this.board[this.selected.y][this.selected.x], { x, y})
-        this.updateURL();
+        sendGameState(this.board);
         this.storeNewPosition();
         return;
       }
@@ -695,12 +691,12 @@ class Game {
 
   }
 
-  updateURL(){
-    const url = new URL(window.location.href);
-    url.searchParams.set('board', JSON.stringify(this.board));
-    const updatedURL = url.toString(); 
-    window.history.replaceState(null, null, updatedURL);
-  }
+  // updateURL(){
+  //   const url = new URL(window.location.href);
+  //   url.searchParams.set('board', JSON.stringify(this.board));
+  //   const updatedURL = url.toString(); 
+  //   window.history.replaceState(null, null, updatedURL);
+  // }
 
   onMouseMove(x, y){
     if (!this.board[y][x]) {
@@ -768,8 +764,78 @@ const flagImages = []
 let flagSpeed = 0;
 let flagSample = 1;
 const game = new Game();
-game.initBoard();
-//game.storeNewPosition();
+const peer = new Peer();
+let conn = null;
+tryJoinGame();
+// ~ ~ ~ ~ ~ ~ ~ P2P ~ ~ ~ ~ ~ ~ ~ ~ ~ //
+function tryJoinGame(){
+  const params = new URLSearchParams(window.location.search);
+  const hostId = params.get("host");
+
+  peer.on("open", (myId) => {
+    console.log("My peer ID:", myId);
+
+    if (!hostId) {
+      // 🔵 HOST MODE
+      console.log("Acting as host");
+
+      // Update URL so you can share it
+      const newUrl = `${window.location.origin}${window.location.pathname}?host=${myId}`;
+      window.history.replaceState({}, "", newUrl);
+
+      console.log("Share this URL:", window.location.href);
+
+      peer.on("connection", (incomingConn) => {
+        console.log("Player connected");
+        conn = incomingConn;
+        setupConnection();
+      });
+
+    } else {
+      // 🟢 JOIN MODE
+      console.log("Joining host:", hostId);
+
+      conn = peer.connect(hostId);
+
+      conn.on("open", () => {
+        console.log("Connected to host");
+        setupConnection();
+      });
+    }
+  });
+}
+
+function setupConnection() {
+  conn.on("data", (data) => {
+    if (data.length < 200){
+      console.log(data)
+    } else {
+      game.updateBoard(data);
+    }
+  });
+
+  conn.on("close", () => {
+    console.log("Connection closed");
+  });
+
+  conn.on("error", (err) => {
+    console.error("Connection error:", err);
+  });
+}
+
+// Example send function
+function sendGameState(stateObject) {
+  if (!conn || !conn.open) return;
+
+  conn.send(JSON.stringify(stateObject));
+}
+
+function chat(text){
+  if (!conn || !conn.open) return;
+
+  conn.send(text);
+}
+
 let moveSound = new Audio("assets/sound/plastic1.wav");
 let captureSound = new Audio("assets/sound/plastic2.wav");
 let cannibalSound = new Audio("assets/sound/metal2.wav");
