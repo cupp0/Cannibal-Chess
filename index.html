@@ -29,11 +29,11 @@
 
 class Piece {
   label;
-  constructor(x, y, color) {
+  constructor(x, y, color, hasMoved) {
     this.x = x;
     this.y = y;
     this.color = color;
-    this.hasMoved = false;
+    this.hasMoved = hasMoved;
   } 
 
   copy(x, y){
@@ -49,11 +49,11 @@ class Piece {
       for (let x = 0; x < buffer[y].length; x++) {
         const fill = {r: buffer[y][x][0], g: buffer[y][x][1], b: buffer[y][x][2], a: buffer[y][x][3]}        
         //hover makes outline grey
-        if (game.hovered === this && game.selected != this && fill.r + fill.g + fill.b === 0){
+        if (game.hovered && game.hovered.x === this.x && game.hovered.y === this.y && fill.r + fill.g + fill.b === 0){
           fill.r = 127; fill.g = 127; fill.b = 127;
         }
         //selected makes outline white
-        if (game.selected === this && fill.r + fill.g + fill.b === 0){
+        if (game.selected && game.selected.x === this.x && game.selected.y === this.y && buffer[y][x][0] + buffer[y][x][1] + buffer[y][x][2] === 0){
           fill.r = 255; fill.g = 255; fill.b = 255;
         }
         ctx.fillStyle = `rgba(${fill.r},${fill.g},${fill.b},${fill.a})`;
@@ -110,13 +110,13 @@ class Piece {
 }
 
 class Pawn extends Piece{
-  isPassing = false;
-  dir;
 
-  constructor(x, y, color){
+  constructor(x, y, color, hasMoved, isPassing){
     super(x, y, color)
     this.setLabel("p")
     this.dir = this.color === "white" ? -1 : 1
+    this.hasMoved = hasMoved
+    this.isPassing = isPassing;
   }
 
   sees(board, square){
@@ -186,7 +186,7 @@ class Bishop extends Piece{
 }
 
 class Rook extends Piece{
-  constructor(x, y, color){
+  constructor(x, y, color, hasMoved){
     super(x, y, color)
     this.setLabel("r")
   }
@@ -224,7 +224,7 @@ class Queen extends Piece{
 }
 
 class King extends Piece{
-  constructor(x, y, color){
+  constructor(x, y, color, hasMoved){
     super(x, y, color)
     this.setLabel("k")
   }
@@ -348,9 +348,8 @@ class Cannibal extends Piece{
 
 class Game {
   constructor(){
-    this.initBoard();  
     this.boardOrientation = 1,
-    this.currentPlayer = "white",
+    //this.currentPlayer = "white",
     this.selected = null,
     this.hovered = null,
     this.validMoves = [],
@@ -362,15 +361,51 @@ class Game {
     this.blackVision = [],
     this.boardIndex = 0,
     this.history = [];
-    this.storeNewPosition();         
+    this.board = [];
   }
 
   initBoard(){
-    this.board = []
-    for (let y = 0; y < SIZE; y++) {
-      this.board[y] = []
-      for (let x = 0; x < SIZE; x++) {
-        this.board[y][x] = this.createPieceByStartSquare(x, y);
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString); //
+    const boardExists = urlParams.get('board');
+
+    if (!boardExists){
+      for (let y = 0; y < SIZE; y++) {
+        this.board[y] = []
+        for (let x = 0; x < SIZE; x++) {
+          this.board[y][x] = this.createPieceByStartSquare(x, y);
+        }
+      }
+      this.updateURL();
+    }
+    
+    else {
+      const b = JSON.parse(boardExists);
+      for (let y = 0; y < SIZE; y++) {
+        this.board[y] = []
+        for (let x = 0; x < SIZE; x++) {
+          if (!b[y][x]) continue;
+          this.board[y][x] = this.createPieceFromObj(b[y][x])
+        }
+      }
+    }
+  }
+
+  createPieceFromObj(obj){
+    if (obj.label.length > 1){
+      const pieces = []
+      for (const p of obj.pieces){
+        pieces.push(this.createPieceFromObj(p))
+      }
+      return new Cannibal(obj.x, obj.y, pieces, obj.color)
+    } else {
+      switch(obj.label.toLowerCase()){
+        case 'p' : return new Pawn(obj.x, obj.y, obj.color, obj.hasMoved, obj.isPassing)
+        case 'n' : return new Knight(obj.x, obj.y, obj.color)
+        case 'b' : return new Bishop(obj.x, obj.y, obj.color)
+        case 'r' : return new Rook(obj.x, obj.y, obj.color, obj.hasMoved)
+        case 'q' : return new Queen(obj.x, obj.y, obj.color)
+        case 'k' : return new King(obj.x, obj.y, obj.color, obj.hasMoved)
       }
     }
   }
@@ -378,12 +413,12 @@ class Game {
   createPieceByStartSquare(x, y){
     const color = y < 4 ? "black" : "white"
     if (y > 1 && y < 6) return null;
-    if (y === 1 || y === 6) return new Pawn(x, y, color)
-    if (x === 0 || x === 7) return new Rook(x, y, color)
+    if (y === 1 || y === 6) return new Pawn(x, y, color, false, false)
+    if (x === 0 || x === 7) return new Rook(x, y, color, false)
     if (x === 1 || x === 6) return new Knight(x, y, color)
     if (x === 2 || x === 5) return new Bishop(x, y, color)
     if (x === 3)            return new Queen(x, y, color)
-    if (x === 4)            return new King(x, y, color)
+    if (x === 4)            return new King(x, y, color, false)
   }
 
   //checks for any pieces between from and to, inclusive
@@ -476,7 +511,7 @@ class Game {
   }
 
   tickState(){
-    this.currentPlayer = this.currentPlayer === "white" ? "black" : "white";
+    //this.currentPlayer = this.currentPlayer === "white" ? "black" : "white";
     this.selected = null;
     this.validMoves = [];
   }
@@ -499,25 +534,25 @@ class Game {
   }
 
   checkForMate(){
-    let legalMoves = 0;
-    for (let y = 0; y < SIZE; y++) {
-      for (let x = 0; x < SIZE; x++) {
-        const thePiece = this.board[y][x]
-        if (!thePiece) continue;
-        if (thePiece.getColor() != this.currentPlayer) continue;
-        const moves = thePiece.getValidMoves(game.board);
-        legalMoves += moves.length;
-      }
-    }
-    if (legalMoves === 0){
-      const otherColor = this.currentPlayer === "white" ? "black" : "white"
-      const king = this.getKing(this.currentPlayer)
-      if (this.playerSees(otherColor, this.board, {x: king.x, y: king.y})){
-        console.log("checkmate")
-      } else {
-        console.log("stalemate")
-      }
-    }
+    // let legalMoves = 0;
+    // for (let y = 0; y < SIZE; y++) {
+    //   for (let x = 0; x < SIZE; x++) {
+    //     const thePiece = this.board[y][x]
+    //     if (!thePiece) continue;
+    //     if (thePiece.getColor() != this.currentPlayer) continue;
+    //     const moves = thePiece.getValidMoves(game.board);
+    //     legalMoves += moves.length;
+    //   }
+    // }
+    // if (legalMoves === 0){
+    //   const otherColor = this.currentPlayer === "white" ? "black" : "white"
+    //   const king = this.getKing(this.currentPlayer)
+    //   if (this.playerSees(otherColor, this.board, {x: king.x, y: king.y})){
+    //     console.log("checkmate")
+    //   } else {
+    //     console.log("stalemate")
+    //   }
+    // }
   }
 
   getKing(color){
@@ -588,10 +623,10 @@ class Game {
 
   renderPieces(){
     for (const row of this.board){
-      for (const piece of row){
-        if (piece instanceof Piece){
-          piece.render();
-        }
+      for (const obj of row){
+        if (obj instanceof Piece){
+          obj.render();
+        } 
       }
     }
   }
@@ -637,25 +672,34 @@ class Game {
       }
 
       //execute a move
-      if(this.selected.isMoveLegal(this.board, { x, y }, true)) {
+      if(this.board[this.selected.y][this.selected.x].isMoveLegal(this.board, { x, y }, true)) {
         if (!this.board[y][x]){
           moveSound.play();
         }
-        else if (this.board[y][x].getColor() === this.currentPlayer){
+        else if (this.board[y][x].getColor() === this.board[this.selected.y][this.selected.x].getColor()){
           cannibalSound.play();
         }
-        else if (this.board[y][x].getColor() !== this.currentPlayer){
+        else if (this.board[y][x].getColor() !== this.board[this.selected.y][this.selected.x].getColor()){
           captureSound.play();
         }
-        this.executeMove(this.selected, { x, y})
+        this.executeMove(this.board[this.selected.y][this.selected.x], { x, y})
+        this.updateURL();
         this.storeNewPosition();
         return;
       }
     }
 
-    if (this.board[y][x].getColor() === this.currentPlayer) {
-      this.select(this.board[y][x]);
+    if (this.board[y][x]){
+      this.select(x, y);
     }
+
+  }
+
+  updateURL(){
+    const url = new URL(window.location.href);
+    url.searchParams.set('board', JSON.stringify(this.board));
+    const updatedURL = url.toString(); 
+    window.history.replaceState(null, null, updatedURL);
   }
 
   onMouseMove(x, y){
@@ -663,9 +707,8 @@ class Game {
       this.hovered = null;
       return;
     }
-
-    if(this.board[y][x] && this.currentPlayer === this.board[y][x].getColor()){
-      this.hovered = this.board[y][x]
+    if(this.board[y][x]){
+      this.hovered = {x: x, y: y}
     }
   }
 
@@ -692,9 +735,9 @@ class Game {
     }
   }
 
-  select(piece){
-    this.selected = piece
-    this.validMoves = this.selected.getValidMoves(this.board);
+  select(x, y){
+    this.selected = {x: x, y: y}
+    this.validMoves = this.board[y][x].getValidMoves(this.board);
   }
 
   updateClocks() {
@@ -702,11 +745,11 @@ class Game {
     const dt = (now - lastTick) / 1000;
     lastTick = now;
 
-    if (currentPlayer === "white") {
-      whiteTime = Math.max(0, whiteTime - dt);
-    } else {
-      blackTime = Math.max(0, blackTime - dt);
-    }
+    // if (currentPlayer === "white") {
+    //   whiteTime = Math.max(0, whiteTime - dt);
+    // } else {
+    //   blackTime = Math.max(0, blackTime - dt);
+    // }
   }
 }
 
@@ -725,6 +768,8 @@ const flagImages = []
 let flagSpeed = 0;
 let flagSample = 1;
 const game = new Game();
+game.initBoard();
+//game.storeNewPosition();
 let moveSound = new Audio("assets/sound/plastic1.wav");
 let captureSound = new Audio("assets/sound/plastic2.wav");
 let cannibalSound = new Audio("assets/sound/metal2.wav");
