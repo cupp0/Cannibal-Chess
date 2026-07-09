@@ -1,16 +1,8 @@
 import Button from "./Button.js";
 import TextField from "./TextField.js";
-
 export default class Menu {
 
     constructor(callbacks) {
-
-        // const playOfflineImage = new Image();
-        // const hostImage = new Image();
-        // const joinImage = new Image();
-        // playOfflineImage.src = `assets/menu/playofflinebutton.PNG`;
-        // hostImage.src = `assets/menu/hostbutton.PNG`;
-        // joinImage.src = `assets/menu/joinbutton.PNG`;
 
         this.hostField = new TextField(80, 136, 86, 11);
         this.joinField = new TextField(80, 150, 86, 11);
