@@ -29,7 +29,7 @@ function initBuffers(){
 
 function addBuffer(name){
     const img = new Image();
-    img.src = "./assets/sprites/"+name+".PNG"
+    img.src = "./assets/sprites/"+name+".png"
     img.onload = function(){
         const tempCanvas = document.createElement("canvas");
         tempCanvas.width = img.width;
