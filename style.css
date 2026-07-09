@@ -1,0 +1,9 @@
+@font-face {
+    font-family: "RetroFont";
+    src: url("assets/fonts/Mx437_ToshibaSat_8x8.woff2") format("woff2");
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+}
