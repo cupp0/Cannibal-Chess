@@ -7,7 +7,6 @@ import King from './pieces/King.js';
 import Cannibal from './pieces/Cannibal.js';
 import Move from './move.js';
 import { playMoveSound, playCaptureSound, playCannibalSound } from "./audio.js";
-import P2P from './net/P2P.js';
 
 class Game {
   constructor(id, cFen){

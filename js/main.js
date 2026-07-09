@@ -1,5 +1,5 @@
 import Game from './game.js';
-import P2P from './net/P2P.js';
+import P2P from './net/p2p.js';
 import {drawBoard, drawPieces, drawMoveDots, drawPlayers, drawMenu } from './render.js';
 import {setupInput} from './input.js';
 import Display from './display.js';
