@@ -11,6 +11,9 @@ export default class Button {
     }
 
     contains(mx, my) {
+       if (this.name === "playoffline"){
+        console.log(mx, my, this.x, this.y, this.w, this.h)
+       }
         return (
             mx >= this.x &&
             mx < this.x + this.w &&
@@ -20,12 +23,11 @@ export default class Button {
     }
 
     onMouseMove(mouse) {
-        this.hover = this.contains(mouse.world.x, mouse.world.y);
+        this.hover = this.contains(mouse.world.x, mouse.world.y)
     }
 
     onMouseDown(mouse) {
-        if (this.contains(mouse.world.x, mouse.world.y))
-            this.onClick();
+        if (this.hover) this.onClick();
     }
 
     draw(ctx) {}

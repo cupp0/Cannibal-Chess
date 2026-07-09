@@ -78,8 +78,8 @@ export function drawBoard(ctx) {
         ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
       }
     }
-    ctx.strokeStyle = 'black'; // Accepts hex, rgb, rgba, hsl, or named colors
-    ctx.lineWidth = 1;           // Set line thickness in pixels
+    ctx.strokeStyle = 'black'; 
+    ctx.lineWidth = 1;          
 
     for (let x = 0; x < 8; x++) {
       ctx.beginPath();           
