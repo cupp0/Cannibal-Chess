@@ -3,6 +3,7 @@ const keyboardInput = document.getElementById("keyboard-input");
 let activeTextField = null;
 
 export function focusTextField(textField) {
+    console.log("sup")
     activeTextField = textField;
 
     keyboardInput.value = textField.text;
