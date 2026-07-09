@@ -1,3 +1,5 @@
+import { focusTextField } from "../mobileStuff.js";
+
 export default class TextField {
 
     constructor(x, y, w, h) {
@@ -25,7 +27,13 @@ export default class TextField {
     }
 
     onMouseDown(mouse) {
-        this.focused = this.contains(mouse.world.x, mouse.world.y);
+        if(this.contains(mouse.world.x, mouse.world.y)){
+            this.focused = true;
+            focusTextField(this);
+        } else {
+            this.focused = false;
+        }
+
     }
 
     onKeyDown(e) {

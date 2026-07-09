@@ -7,3 +7,9 @@ body {
     margin: 0;
     overflow: hidden;
 }
+
+#keyboard-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}

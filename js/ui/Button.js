@@ -11,9 +11,6 @@ export default class Button {
     }
 
     contains(mx, my) {
-       if (this.name === "playoffline"){
-        console.log(mx, my, this.x, this.y, this.w, this.h)
-       }
         return (
             mx >= this.x &&
             mx < this.x + this.w &&
