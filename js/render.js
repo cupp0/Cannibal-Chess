@@ -29,6 +29,7 @@ function initBuffers(){
 
 function addBuffer(name){
     const img = new Image();
+    //pngy pngy bo bngy banana fana fo fngy
     img.src = "./assets/sprites/"+name+".png"
     img.onload = function(){
         const tempCanvas = document.createElement("canvas");
