@@ -174,13 +174,8 @@ class Game {
       //execute a move
       const theMove = this.validMoves.find(move => this.squareEquals(move.to, {x, y}));
       if(theMove && this.currentPlayer === theMove.piece.color) {
-        this.executeMove(theMove)
-        this.playMoveAudio(theMove.type);
-        this.storePosition(this.getCFen());
-        this.deselect();
-        this.checkForMate(theMove.piece.color)
-        this.currentPlayer = this.getOtherPlayer();
-        this.p2p.send(this.getCFen())
+        this.executeLiveMove(theMove);
+        
         return;
       } 
       
@@ -190,6 +185,21 @@ class Game {
     }
 
     this.trySelect(x, y);
+  }
+
+  executeLiveMove(theMove){
+    this.executeMove(theMove)
+    this.playMoveAudio(theMove.type);
+    this.storePosition(this.getCFen());
+    this.deselect();
+    this.checkForMate(theMove.piece.color)
+    this.currentPlayer = this.getOtherPlayer();
+    if (this.p2p){
+        this.p2p.send(this.getCFen())
+    }
+    this.onMove?.({
+        theMove
+    });
   }
 
   onMouseMove(x, y){

@@ -1,8 +1,15 @@
-import Piece from './pieces/Piece.js';
 
 const TILE = 32;
 const MOVEDOT = 8;
 const assetBuffers = new Map()
+
+function forEachSquare(callback) {
+  for (let x = 0; x < 8; x++) {
+      for (let y = 0; y < 8; y++) {
+          callback(x, y);
+      }
+  }
+}
 
 initBuffers();
 function initBuffers(){
@@ -94,13 +101,13 @@ export function drawBoard(ctx) {
     }
 }
 
-export function drawPieces(ctx, game){
-    for (let y = 0; y < 8; y++) {
-        for (let x = 0; x < 8; x++) {
-            if (!game.board[y][x])continue;
-            drawPiece(game, x, y, ctx);
-          }
-    }
+//pass animations so we know which squares to not render during animation
+export function drawPieces(ctx, game, animations){
+  forEachSquare((x, y) => {
+      if (!game.board[y][x]) return;
+      if (animations.isSquareAnimated(x, y)) return;
+      drawPiece(game, x, y, ctx);
+  })
 }
 
 function drawPiece(game, squareX, squareY, ctx){
@@ -139,6 +146,28 @@ export function drawPlayers(ctx, mouse){
     } 
 }
 
+export function dissolve(ctx, p1, p2, xPos, yPos, amount){
+  console.log(amount)
+  const buffer = []
+  const b1 = assetBuffers.get(p1)
+  const b2 = assetBuffers.get(p2)
+      for (let y = 0; y < b1.length; y++) {
+          buffer[y] = []
+          for (let x = 0; x < b1[y].length; x++) {
+          let r = (1-amount)*b1[y][x][0] + amount*b2[y][x][0];
+          let g = (1-amount)*b1[y][x][1] + amount*b2[y][x][1];
+          let b = (1-amount)*b1[y][x][2] + amount*b2[y][x][2];
+          let a = (1-amount)*b1[y][x][3] + amount*b2[y][x][3];
+          buffer[y][x] = [r, g, b, a];
+          }
+      }
+  renderBuffer(ctx, buffer, xPos, yPos)
+}
+
+export function renderSprite(ctx, name, xPos, yPos){
+  renderBuffer(ctx, assetBuffers.get(name), xPos, yPos)
+}
+
 function renderBuffer(ctx, buffer, xPos, yPos){
     if(!buffer)return;
     for (let y = 0; y < buffer.length; y++) {
@@ -167,7 +196,6 @@ export function drawMoveDots(ctx, game) {
 }
 
 export function drawMenu(ctx, menu) {
-  
     renderBuffer(ctx, assetBuffers.get("titlesplash"), 21, 88);
 
     for (const widget of menu.widgets){
