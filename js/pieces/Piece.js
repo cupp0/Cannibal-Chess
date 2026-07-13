@@ -10,4 +10,8 @@ export default class Piece {
     return [this];
   }
 
+  getAssetString(){
+    return this.color+"-"+this.label.toLowerCase();
+  }
+
 }

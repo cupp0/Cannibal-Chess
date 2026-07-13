@@ -62,6 +62,10 @@ function addBuffer(name){
     } 
 }
 
+export function getBuffer(name){
+  return assetBuffers.get(name)
+}
+
 function generateCombinations(n) {
     const result = [];
     function backtrack(start, combo) {
@@ -146,11 +150,9 @@ export function drawPlayers(ctx, mouse){
     } 
 }
 
-export function dissolve(ctx, p1, p2, xPos, yPos, amount){
+export function dissolve(ctx, b1, b2, xPos, yPos, amount){
   console.log(amount)
   const buffer = []
-  const b1 = assetBuffers.get(p1)
-  const b2 = assetBuffers.get(p2)
       for (let y = 0; y < b1.length; y++) {
           buffer[y] = []
           for (let x = 0; x < b1[y].length; x++) {
@@ -168,7 +170,7 @@ export function renderSprite(ctx, name, xPos, yPos){
   renderBuffer(ctx, assetBuffers.get(name), xPos, yPos)
 }
 
-function renderBuffer(ctx, buffer, xPos, yPos){
+export function renderBuffer(ctx, buffer, xPos, yPos){
     if(!buffer)return;
     for (let y = 0; y < buffer.length; y++) {
         for (let x = 0; x < buffer[y].length; x++) {

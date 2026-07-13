@@ -5,8 +5,8 @@ import Bishop from './pieces/Bishop.js';
 import Queen from './pieces/Queen.js';
 import King from './pieces/King.js';
 import Cannibal from './pieces/Cannibal.js';
-import Move from './move.js';
 import { playMoveSound, playCaptureSound, playCannibalSound } from "./audio.js";
+import Move from './move.js';
 
 class Game {
   constructor(id, cFen){

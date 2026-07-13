@@ -1,6 +1,8 @@
 import MoveAnimation from './moveAnimation.js';
 import CannibalAnimation from './cannibalAnimation.js';
 import CaptureAnimation from './captureAnimation.js';
+import Move from '../move.js';
+
 
 export default class AnimationManager {
 

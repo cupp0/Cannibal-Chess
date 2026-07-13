@@ -1,3 +1,4 @@
+
 export default class Move {
   
   constructor(piece, from, to, target, type){
