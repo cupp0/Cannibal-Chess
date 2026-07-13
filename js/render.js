@@ -11,6 +11,14 @@ function forEachSquare(callback) {
   }
 }
 
+function forEachPixel(buffer, callback) {
+    for (let y = 0; y < buffer.length; y++) {
+        for (let x = 0; x < buffer[y].length; x++) {
+            callback(x, y);
+        }
+    }
+}
+
 initBuffers();
 function initBuffers(){
     const pieceOrder = ['b', 'n', 'p', 'q', 'r']    
@@ -85,7 +93,7 @@ function generateCombinations(n) {
 export function drawBoard(ctx) {
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 8; x++) {
-        ctx.fillStyle = (x + y) % 2 === 0 ? "rgba(110, 118, 130, 255)" : "rgba(58, 47, 54, 255)";
+        ctx.fillStyle = (x + y) % 2 === 0 ? "rgba(160, 148, 130, 255)" : "rgba(18, 37, 24, 255)";
         ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
       }
     }
@@ -106,48 +114,51 @@ export function drawBoard(ctx) {
 }
 
 //pass animations so we know which squares to not render during animation
-export function drawPieces(ctx, game, animations){
+export function drawPieces(ctx, game, animations, mouse){
   forEachSquare((x, y) => {
       if (!game.board[y][x]) return;
       if (animations.isSquareAnimated(x, y)) return;
+      if (game.isDragging(x, y)){drawDraggedPiece(ctx, game, x, y, mouse); return;}
       drawPiece(game, x, y, ctx);
   })
 }
 
 function drawPiece(game, squareX, squareY, ctx){
-    const label = game.board[squareY][squareX].label;
-    const col = label === label.toLowerCase() ? "black" : "white";
-    const name = col+"-"+(label.toLowerCase())
-    const buffer = assetBuffers.get(name)
+    const buffer = assetBuffers.get(game.board[squareY][squareX].getAssetString());
     const actualTile = game.boardOrientation === 1 ? {x: squareX, y: squareY} : {x: 7-squareX, y: 7-squareY}
-    if(!buffer)return;
-    for (let y = 0; y < buffer.length; y++) {
-      for (let x = 0; x < buffer[y].length; x++) {
-        const fill = {r: buffer[y][x][0], g: buffer[y][x][1], b: buffer[y][x][2], a: buffer[y][x][3]}        
-        //hover makes outline grey
-        if (game.hovered && game.hovered.x === squareX && game.hovered.y === squareY && fill.r + fill.g + fill.b === 0){
-          fill.r = 127; fill.g = 127; fill.b = 127;
-        }
-        //selected makes outline white
-        if (game.selected && game.selected.x === squareX && game.selected.y === squareY && buffer[y][x][0] + buffer[y][x][1] + buffer[y][x][2] === 0){
-          fill.r = 255; fill.g = 255; fill.b = 255;
-        }
-        ctx.fillStyle = `rgba(${fill.r},${fill.g},${fill.b},${fill.a})`;
-        ctx.fillRect(actualTile.x * TILE + x, actualTile.y * TILE + y, 1, 1);
+    const pos = {x: actualTile.x * TILE, y: actualTile.y * TILE}
+
+    let highlight = 0;
+    if (game.isHovered(squareX, squareY)) highlight += 127;
+    if (game.isSelected(squareX, squareY)) highlight += 127;
+    if (highlight > 0)renderBuffer(ctx, highlightBuffer(buffer, highlight), pos.x, pos.y)
+    else renderBuffer(ctx, buffer, pos.x, pos.y)
+}
+
+function drawDraggedPiece(ctx, game, squareX, squareY, mouse){
+    const buffer = assetBuffers.get(game.board[squareY][squareX].getAssetString());
+    const pos = {x: mouse.world.x - 16, y: mouse.world.y-16}
+    renderBuffer(ctx, highlightBuffer(buffer, 255), pos.x, pos.y)
+}
+
+function highlightBuffer(buffer, amount){  
+  const newBuffer = []
+  for (let y = 0; y < buffer.length; y++){
+    newBuffer[y] = [];
+    for (let x = 0; x < buffer[y].length; x++){
+      if (buffer[y][x][0] + buffer[y][x][1] + buffer[y][x][2] === 0 && buffer[y][x][3] === 1){
+        newBuffer[y][x] = [amount, amount , amount, 1];
+      } else {
+        newBuffer[y][x] = buffer[y][x];
       }
-    } 
+    }
+  }
+  return newBuffer
 }
 
 export function drawPlayers(ctx, mouse){
   const hand = assetBuffers.get("hand")
-    if(!hand)return;
-    for (let y = 0; y < hand.length; y++) {
-      for (let x = 0; x < hand[y].length; x++) {
-        const fill = {r: hand[y][x][0], g: hand[y][x][1], b: hand[y][x][2], a: hand[y][x][3]}        
-        ctx.fillStyle = `rgba(${fill.r},${fill.g},${fill.b},${fill.a})`;
-        ctx.fillRect(mouse.world.x + x-16 , mouse.world.y + y-8 , 1, 1);
-      }
-    } 
+  renderBuffer(ctx, hand, mouse.world.x - 16 , mouse.world.y - 16)
 }
 
 export function dissolve(ctx, b1, b2, xPos, yPos, amount){
@@ -170,15 +181,12 @@ export function renderSprite(ctx, name, xPos, yPos){
   renderBuffer(ctx, assetBuffers.get(name), xPos, yPos)
 }
 
-export function renderBuffer(ctx, buffer, xPos, yPos){
-    if(!buffer)return;
-    for (let y = 0; y < buffer.length; y++) {
-        for (let x = 0; x < buffer[y].length; x++) {
-          const fill = {r: buffer[y][x][0], g: buffer[y][x][1], b: buffer[y][x][2], a: buffer[y][x][3]}        
-          ctx.fillStyle = `rgba(${fill.r},${fill.g},${fill.b},${fill.a})`;
-          ctx.fillRect(xPos + x , yPos + y, 1, 1);
-        }
-    } 
+export function renderBuffer(ctx, b, xPos, yPos){
+    if(!b)return;
+    forEachPixel(b, (x, y) =>{
+        ctx.fillStyle = `rgba(${b[y][x][0]},${b[y][x][1]},${b[y][x][2]},${b[y][x][3]})`;
+        ctx.fillRect(xPos + x , yPos + y, 1, 1);
+    })
 }
 
 export function drawMoveDots(ctx, game) {

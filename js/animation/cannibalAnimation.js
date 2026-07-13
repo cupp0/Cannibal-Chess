@@ -1,4 +1,4 @@
-import {getBuffer, dissolve, renderBuffer} from '../render.js';
+import {getBuffer, renderBuffer} from '../render.js';
 
 export default class CannibalAnimation {
 

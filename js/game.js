@@ -14,6 +14,7 @@ class Game {
     this.boardOrientation = 1,
     this.selected = null,
     this.hovered = null,
+    this.dragging = null,
     this.validMoves = [],
     this.history = [],
     this.boardIndex = 0,
@@ -49,6 +50,31 @@ class Game {
 
   getPiece(square){
     return this.board[square.y][square.x]
+  }
+
+  getHover(){
+    if (this.hovered) return this.hovered
+    return false;
+  }
+
+  getSelected(){
+    if(this.selected) return this.selected
+    return false;
+  }
+
+  isHovered(x, y){
+    if (!this.hovered) return false;
+    return this.hovered.x === x && this.hovered.y === y;
+  }
+
+  isSelected(x, y){
+    if (!this.selected) return false;
+    return this.selected.x === x && this.selected.y === y;
+  }
+
+  isDragging(x, y){
+    if (!this.dragging) return false;
+    return this.dragging.x === x && this.dragging.y === y;
   }
 
   setPiece(square, piece){
@@ -163,6 +189,7 @@ class Game {
 
   //coordinates of the square that was pressed
   onMouseDown(x, y){
+
     if (this.selected){
 
       //deselect when clicking the same piece twice
@@ -187,29 +214,29 @@ class Game {
     this.trySelect(x, y);
   }
 
-  executeLiveMove(theMove){
-    this.executeMove(theMove)
-    this.playMoveAudio(theMove.type);
-    this.storePosition(this.getCFen());
-    this.deselect();
-    this.checkForMate(theMove.piece.color)
-    this.currentPlayer = this.getOtherPlayer();
-    if (this.p2p){
-        this.p2p.send(this.getCFen())
-    }
-    this.onMove?.({
-        theMove
-    });
-  }
-
   onMouseMove(x, y){
     if ( x < 0 || x > 7 || y < 0 || y > 7) return;
+    if (this.dragging) return;
     if (!this.getPiece({x, y})) {
       this.hovered = null;
       return;
     }
     if(this.getPiece({x, y})){
       this.hovered = {x: x, y: y}
+    }
+  }
+
+  onMouseUp(x, y){
+    if (this.dragging){
+      
+      //execute a move
+      const theMove = this.validMoves.find(move => this.squareEquals(move.to, {x, y}));
+      if(theMove && this.currentPlayer === theMove.piece.color) {
+        this.executeLiveMove(theMove, this.dragging);
+        return;
+      } 
+
+      this.dragging = null;
     }
   }
 
@@ -233,6 +260,23 @@ class Game {
   relocatePiece(from, to){
     this.setPiece(to, this.getPiece(from));
     this.setPiece(from, null);
+  }
+
+  executeLiveMove(theMove){
+    this.executeMove(theMove)
+    this.playMoveAudio(theMove.type);
+    this.storePosition(this.getCFen());
+    this.deselect();
+    this.checkForMate(theMove.piece.color)
+    this.currentPlayer = this.getOtherPlayer();
+    if (this.p2p){
+        this.p2p.send(this.getCFen())
+    }
+    if (!this.dragging){
+      this.onMove?.({
+          theMove
+      });
+    }
   }
 
   executeMove(move){
@@ -264,7 +308,7 @@ class Game {
     } 
 
     //castling state updates
-    if (move.piece instanceof Rook){
+    if (move.piece instanceof Rook || move.target instanceof Rook){
       const lostRights = this.getRookSquare(move.from) + this.getRookSquare(move.to)
       for (const char of lostRights){
         this.castlingRights = this.castlingRights.replace(char, '');
@@ -368,6 +412,7 @@ class Game {
     const piece = this.getPiece({x, y});
     if (piece){
       this.selected = {x: x, y: y}
+      this.dragging = {x: x, y: y}
       this.updateValidMoves(this.selected);
     }  
   }

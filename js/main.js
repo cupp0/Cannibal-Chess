@@ -52,13 +52,10 @@ const menu = new Menu({
 });
 
 setupInput(canvas, mouse, menu, game, page);
-
-
 loop();
 
 function loop() {
   
-
   drawBoard(ctx);
   animations.update(time);
   animations.draw(ctx);
@@ -68,7 +65,7 @@ function loop() {
       drawMenu(ctx, menu)
       break;
     case "game":
-      drawPieces(ctx, game, animations);
+      drawPieces(ctx, game, animations, mouse);
       drawMoveDots(ctx, game);
       drawPlayers(ctx, mouse);
       break;

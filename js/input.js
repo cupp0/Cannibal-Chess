@@ -18,6 +18,13 @@ export function setupInput(canvas, mouse, menu, game, page){
         
     });
 
+    canvas.addEventListener("mouseup", e => {
+        switch (page.state){
+            case "game" : game.onMouseUp(mouse.board.x, mouse.board.y); break;
+        }  
+        
+    });
+
     window.addEventListener("keydown", e => {
         switch (page.state){
             case "menu" : menu.onKeyDown(e); break;
