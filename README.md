@@ -14,7 +14,7 @@ In **Cannibal Chess**, you can capture your own pieces. If you do, the resulting
 - zontan animation / audio
 - background assets
   
-** fun stuff after T0d0**
+**fun stuff after T0d0**
 - hands connected to arms that interact
 - chat
 - bugs walking on park bench
