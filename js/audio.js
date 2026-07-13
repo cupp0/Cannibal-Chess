@@ -1,6 +1,6 @@
-let moveSound = new Audio("assets/sound/plastic1.wav");
-let captureSound = new Audio("assets/sound/plastic2.wav");
-let cannibalSound = new Audio("assets/sound/metal2.wav");
+let moveSound = new Audio("assets/sound/synthMove.wav");
+let captureSound = new Audio("assets/sound/synthCapture.wav");
+let cannibalSound = new Audio("assets/sound/synthCannibal.wav");
 
 export function playMoveSound() {
   moveSound.currentTime = 0;

@@ -23,30 +23,35 @@ game.onMove = event => {
     animations.add(
         new MoveAnimation(
             time, 
-            event.theMove
+            event.theMove,
+            game.dragging
         )
     );
 
 };
+
+game.onGameEnd = () => {
+  page.setState("menu") 
+}
 
 const p2p = new P2P(game);
 const menu = new Menu({
 
     playOffline() {
       console.log("play offline")
-      page.state = "game";
+      page.setState("game");
     },
 
     hostRoom(name) {
       p2p.host(name);
       game.setP2P(p2p)
-      page.state = "game"
+      page.setState("game");
     },
 
     joinRoom(name) {
       p2p.join(name)
       game.setP2P(p2p)
-      page.state = "game"
+      page.setState("game");
     }
 
 });

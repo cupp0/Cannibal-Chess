@@ -2,7 +2,7 @@ import {renderSprite} from '../render.js';
 
 export default class MoveAnimation {
 
-    constructor(startTime, move) {
+    constructor(startTime, move, dragging) {
         this.startTime = startTime; 
         this.move = move
 
@@ -10,6 +10,7 @@ export default class MoveAnimation {
         this.duration = 4;
 
         this.finished = false;
+        if (dragging) this.finished = true;
     }
 
 

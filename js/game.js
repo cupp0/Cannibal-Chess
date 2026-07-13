@@ -272,11 +272,11 @@ class Game {
     if (this.p2p){
         this.p2p.send(this.getCFen())
     }
-    if (!this.dragging){
-      this.onMove?.({
-          theMove
-      });
-    }
+    
+    this.onMove?.({
+        theMove
+    });
+
   }
 
   executeMove(move){
@@ -345,6 +345,7 @@ class Game {
     })
     if (legalMoves === 0){
       console.log(kingAttacked ? "checkmate" : "stalemate")
+      this.onGameEnd();
     }
 
   }
