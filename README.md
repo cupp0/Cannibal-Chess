@@ -4,7 +4,7 @@ In **Cannibal Chess**, you can capture your own pieces. If you do, the resulting
 - The **King** cannot combine with any other piece.
 - **Castling** rules apply so long as the relevant Rook has not combined with anything.
 - **En Passant** rules apply so long as neither pawn (passing or capturing) has combined with anything.
-- **Pawn promotion** rules apply so long as the relevant **Pawn** has not combined with anything. A **Pawn** cannot promote to a combined piece (unless it promotes by capturing a friendly piece)
+- **Pawn promotion** rules apply so long as the relevant **Pawn** has not combined with anything.
 
 **T0d0**
 - fix p2p
