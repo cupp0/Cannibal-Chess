@@ -294,9 +294,8 @@ class Game {
     this.executeLiveMove(this.tryCreateMove(theMove.from, theMove.to), false)
   }
 
-  receiveHandUpdate(data){
-    this.you.setPos(data.action.world.x, data.action.world.y)
-    console.log("received opponent pos: " + data.x, data.y)
+  receiveHandUpdate(opp){
+    this.you.setPos(opp.world.x, opp.world.y)
   }
 
   executeMove(move){
