@@ -61,7 +61,7 @@ class P2P{
 
           console.log("Received:", data);
 
-          this.game.executeLiveMove(data, false)
+          this.game.receivePeerMove(data)
       });
 
       this.conn.on("close", () => {

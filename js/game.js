@@ -279,6 +279,13 @@ class Game {
 
   }
 
+  receivePeerMove(theMove){
+    const p = this.createPiece(theMove.piece.label);
+    const t = this.createPiece(theMove.target.label);
+    const reconstitutedMove = new Move(p, theMove.from, theMove.to, t, theMove.type)
+    this.executeLiveMove(reconstitutedMove, false)
+  }
+
   executeMove(move){
     //all moves do this
     this.relocatePiece(move.from, move.to)
