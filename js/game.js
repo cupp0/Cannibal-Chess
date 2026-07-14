@@ -201,7 +201,7 @@ class Game {
       //execute a move
       const theMove = this.validMoves.find(move => this.squareEquals(move.to, {x, y}));
       if(theMove && this.currentPlayer === theMove.piece.color) {
-        this.executeLiveMove(theMove);
+        this.executeLiveMove(theMove, true);
         
         return;
       } 
@@ -232,7 +232,7 @@ class Game {
       //execute a move
       const theMove = this.validMoves.find(move => this.squareEquals(move.to, {x, y}));
       if(theMove && this.currentPlayer === theMove.piece.color) {
-        this.executeLiveMove(theMove, this.dragging);
+        this.executeLiveMove(theMove, true);
         return;
       } 
 
@@ -262,14 +262,14 @@ class Game {
     this.setPiece(from, null);
   }
 
-  executeLiveMove(theMove){
+  executeLiveMove(theMove, isLocalSource){
     this.executeMove(theMove)
     this.playMoveAudio(theMove.type);
     this.storePosition(this.getCFen());
     this.deselect();
     this.checkForMate(theMove.piece.color)
     this.currentPlayer = this.getOtherPlayer();
-    if (this.p2p){
+    if (this.p2p && isLocalSource){
         this.p2p.send(theMove)
     }
     
