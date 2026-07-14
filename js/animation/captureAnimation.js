@@ -12,7 +12,6 @@ export default class CaptureAnimation {
         this.duration = 16;
     }
 
-
     update(t) {
         this.currentTime = t;
         if (this.currentTime - this.startTime >= this.duration) this.finished = true;
@@ -36,6 +35,5 @@ export default class CaptureAnimation {
             y
         );
     }
-
-    
+  
 }

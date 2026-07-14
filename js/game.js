@@ -10,7 +10,7 @@ import Move from './move.js';
 
 class Game {
   constructor(id, cFen){
-    this.id = id;
+    this.id = id,
     this.boardOrientation = 1,
     this.selected = null,
     this.hovered = null,
@@ -19,6 +19,7 @@ class Game {
     this.history = [],
     this.boardIndex = 0,
     this.p2p = null;
+    this.setPlayer(["black", "white"]);
 
     this.loadCFen(cFen);
     this.storePosition(cFen);
@@ -45,6 +46,11 @@ class Game {
 
   setP2P(p2p){
     this.p2p = p2p;
+  }
+
+  //list of colors this machine can move 
+  setPlayer(colors){
+    this.player = colors;
   }
 
   getPiece(square){
@@ -350,7 +356,6 @@ class Game {
       console.log(kingAttacked ? "checkmate" : "stalemate")
       this.onGameEnd();
     }
-
   }
 
   getKing(color){
@@ -415,6 +420,7 @@ class Game {
   trySelect(x, y){
     const piece = this.getPiece({x, y});
     if (piece){
+      if (!this.player.includes(piece.color)) return;
       this.selected = {x: x, y: y}
       this.dragging = {x: x, y: y}
       this.updateValidMoves(this.selected);

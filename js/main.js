@@ -30,7 +30,6 @@ game.onMove = event => {
             game.boardOrientation
         )
     );
-
 };
 
 game.onGameEnd = () => {
@@ -48,12 +47,14 @@ const menu = new Menu({
     hostRoom(name) {
       p2p.host(name);
       game.setP2P(p2p)
+      game.setPlayer(["white"])
       page.setState("game");
     },
 
     joinRoom(name) {
       p2p.join(name)
       game.setP2P(p2p)
+      game.setPlayer(["black"])
       page.setState("game");
     }
 
