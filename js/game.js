@@ -7,10 +7,13 @@ import King from './pieces/King.js';
 import Cannibal from './pieces/Cannibal.js';
 import { playMoveSound, playCaptureSound, playCannibalSound } from "./audio.js";
 import Move from './move.js';
+import Action from './net/action.js';
 
 class Game {
-  constructor(id, cFen){
+  constructor(id, cFen, me, you){
     this.id = id,
+    this.me = me,
+    this.you = you,
     this.boardOrientation = 1,
     this.selected = null,
     this.hovered = null,
@@ -20,7 +23,6 @@ class Game {
     this.boardIndex = 0,
     this.p2p = null;
     this.setPlayer(["black", "white"]);
-
     this.loadCFen(cFen);
     this.storePosition(cFen);
   }
@@ -42,6 +44,10 @@ class Game {
       }
     }
     return false;
+  }
+
+  setOpponent(opp){
+    this.you = opp;
   }
 
   setP2P(p2p){
@@ -275,7 +281,7 @@ class Game {
     this.checkForMate(theMove.piece.color)
     this.currentPlayer = this.getOtherPlayer();
     if (this.p2p && isLocalSource){
-        this.p2p.send(theMove)
+        this.p2p.send(new Action("move", theMove))
     }
     
     this.onMove?.({
@@ -286,6 +292,10 @@ class Game {
 
   receivePeerMove(theMove){
     this.executeLiveMove(this.tryCreateMove(theMove.from, theMove.to), false)
+  }
+
+  receiveHandUpdate(data){
+    this.you.setPos(data.x, data.y)
   }
 
   executeMove(move){

@@ -4,10 +4,13 @@ import {drawBackground, drawBoard, drawPieces, drawMoveDots, drawPlayers, drawMe
 import {setupInput} from './input.js';
 import Display from './display.js';
 import Mouse from './mouse.js';
-import Page from './page.js'
-import Menu from './ui/Menu.js'
+import Player from './player.js';
+import Action from './net/action.js';
+import Page from './page.js';
+import Menu from './ui/Menu.js';
 import AnimationManager from './animation/animationManager.js';
 import MoveAnimation from './animation/moveAnimation.js';
+
 
 let time = 0;
 const bgCanvas = document.getElementById("background");
@@ -18,7 +21,7 @@ const display = new Display(canvas, ctx, bgCanvas, bgCtx);
 const mouse = new Mouse(display);
 const page = new Page("menu")
 const startingPosition = "r,n,b,q,k,b,n,r/p,p,p,p,p,p,p,p/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/P,P,P,P,P,P,P,P/R,N,B,Q,K,B,N,R white KQkq -"
-const game = new Game("main", startingPosition);
+const game = new Game("main", startingPosition, new Player(0, 0, true), new Player(0, 0, false));
 const animations = new AnimationManager();
 
 game.onMove = event => {
@@ -55,6 +58,7 @@ const menu = new Menu({
       p2p.join(name)
       game.setP2P(p2p)
       game.setPlayer(["black"])
+      game.boardOrientation *= -1;
       page.setState("game");
     }
 
@@ -68,6 +72,10 @@ function loop() {
   drawBoard(ctx);
   animations.update(time);
   animations.draw(ctx);
+
+  if (time % 30 === 0 && p2p){
+    p2p.send(new Action("hand", mouse))
+  }
   
   switch(page.state){
     case "menu":
@@ -76,7 +84,7 @@ function loop() {
     case "game":
       drawPieces(ctx, game, animations, mouse);
       drawMoveDots(ctx, game);
-      drawPlayers(ctx, mouse);
+      drawPlayers(ctx, game, mouse);
       break;
   }
   

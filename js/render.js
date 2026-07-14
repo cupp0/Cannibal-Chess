@@ -164,13 +164,13 @@ function highlightBuffer(buffer, amount){
   return newBuffer
 }
 
-export function drawPlayers(ctx, mouse){
+export function drawPlayers(ctx, game, mouse){
   const hand = assetBuffers.get("hand")
   renderBuffer(ctx, hand, mouse.world.x - 16 , mouse.world.y - 16)
+  if (game.you.active) renderBuffer(ctx, hand, game.you.x - 16 , game.you.y - 16)
 }
 
 export function dissolve(ctx, b1, b2, xPos, yPos, amount){
-  console.log(amount)
   const buffer = []
       for (let y = 0; y < b1.length; y++) {
           buffer[y] = []

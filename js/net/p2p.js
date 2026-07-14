@@ -1,6 +1,7 @@
 class P2P{
-  constructor(game){
+  constructor(game, opponent){
     this.game = game;
+    this.opponent = opponent;
   }
 
   host(roomName) {
@@ -14,7 +15,7 @@ class P2P{
               this.conn = conn;
 
               console.log("Opponent connected.");
-
+              this.game.you.active = true;    
               this.setupConnection();
           });
           return true;
@@ -44,6 +45,7 @@ class P2P{
 
           this.conn.on("open", () => {
               console.log("Connected!");
+              this.game.you.active = true;
               this.setupConnection();
           });
 
@@ -61,7 +63,8 @@ class P2P{
 
           console.log("Received:", data);
 
-          this.game.receivePeerMove(data)
+          if (data.type === "move")this.game.receivePeerMove(data.action)
+          if (data.type === "hand")this.game.receiveHandUpdate(data.action)
       });
 
       this.conn.on("close", () => {
