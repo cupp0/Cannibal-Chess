@@ -10,12 +10,10 @@ export default class AnimationManager {
         this.animations = [];
     }
 
-    isSquareAnimated(x, y){
+    isSquareAnimated(x, y, orientation){
         for (const a of this.animations){
-            const from = a.move.from;
-            const to = a.move.to;
-            if (from.x === x && from.y === y) return true;
-            if (to.x === x && to.y === y) return true;
+            if (a.move.from.x === x && a.move.from.y === y) return true;
+            if (a.move.to.x === x && a.move.to.y === y) return true;
         }
         return false;
     }
@@ -42,10 +40,10 @@ export default class AnimationManager {
     onAnimationEnd(a){
         if (a instanceof MoveAnimation){
             if (a.move.type === "cannibal"){
-                this.add(new CannibalAnimation(a.currentTime, a.move))
+                this.add(new CannibalAnimation(a.currentTime, a.move, a.orientation))
             }
             if (a.move.type === "capture"){
-                this.add(new CaptureAnimation(a.currentTime, a.move))
+                this.add(new CaptureAnimation(a.currentTime, a.move, a.orientation))
             }
         }
     }

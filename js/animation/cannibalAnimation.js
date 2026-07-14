@@ -2,11 +2,13 @@ import {getBuffer, renderBuffer} from '../render.js';
 
 export default class CannibalAnimation {
 
-    constructor(startTime, move) {
+    constructor(startTime, move, orientation) {
         this.startTime = startTime; 
-        this.move = move
-        this.currentTime = startTime
+        this.currentTime = startTime;
         this.finished = false;
+        this.move = move;
+        this.x = orientation === 1 ? move.to.x: 7-move.to.x;
+        this.y = orientation === 1 ? move.to.y: 7-move.to.y;
         this.changingPixels = []
         this.morphBuffer = this.getOverlap(
            getBuffer(move.piece.getAssetString()), 
@@ -162,14 +164,8 @@ export default class CannibalAnimation {
     }
 
     draw(ctx) {
-        const x = this.move.to.x * 32;
-        const y = this.move.to.y * 32;
-        const amount = (this.currentTime - this.startTime) / this.duration;
-
         if ((this.currentTime - this.startTime)%3 === 2)this.updateMorph();
-        //dissolve(ctx, this.morph, this.cannibal, x, y, amount)
-        renderBuffer(ctx, this.morphBuffer, x, y)
+        renderBuffer(ctx, this.morphBuffer, this.x * 32, this.y * 32)
     }
-
 
 }

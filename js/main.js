@@ -26,7 +26,8 @@ game.onMove = event => {
         new MoveAnimation(
             time, 
             event.theMove,
-            game.dragging
+            game.dragging,
+            game.boardOrientation
         )
     );
 

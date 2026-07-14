@@ -125,7 +125,7 @@ export function drawBoard(ctx) {
 export function drawPieces(ctx, game, animations, mouse){
   forEachSquare((x, y) => {
       if (!game.board[y][x]) return;
-      if (animations.isSquareAnimated(x, y)) return;
+      if (animations.isSquareAnimated(x, y, game.boardOrientation)) return;
       if (game.isDragging(x, y)){drawDraggedPiece(ctx, game, x, y, mouse); return;}
       drawPiece(game, x, y, ctx);
   })
