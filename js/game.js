@@ -280,10 +280,7 @@ class Game {
   }
 
   receivePeerMove(theMove){
-    const p = this.createPiece(theMove.piece.label);
-    const t = this.createPiece(theMove.target.label);
-    const reconstitutedMove = new Move(p, theMove.from, theMove.to, t, theMove.type)
-    this.executeLiveMove(reconstitutedMove, false)
+    this.executeLiveMove(this.tryCreateMove(theMove.from, theMove.to), false)
   }
 
   executeMove(move){
