@@ -295,7 +295,8 @@ class Game {
   }
 
   receiveHandUpdate(data){
-    this.you.setPos(data.x, data.y)
+    this.you.setPos(data.action.world.x, data.action.world.y)
+    console.log("received opponent pos: " + data.x, data.y)
   }
 
   executeMove(move){

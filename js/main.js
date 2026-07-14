@@ -73,8 +73,9 @@ function loop() {
   animations.update(time);
   animations.draw(ctx);
 
-  if (time % 30 === 0 && p2p){
-    p2p.send(new Action("hand", mouse))
+  if (time % 100 === 0){
+    console.log("opponent active" + game.you.active)
+    if (p2p) p2p.send(new Action("hand", mouse))
   }
   
   switch(page.state){
