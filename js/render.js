@@ -101,7 +101,7 @@ export function drawBackground(ctx){
 export function drawBoard(ctx) {
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 8; x++) {
-        ctx.fillStyle = (x + y) % 2 === 0 ? "rgba(160, 148, 130, 255)" : "rgba(18, 37, 24, 255)";
+        ctx.fillStyle = (x + y) % 2 === 0 ? "rgba(160, 148, 130, 255)" : "rgba(18, 24, 37, 255)";
         ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
       }
     }
