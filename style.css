@@ -5,5 +5,24 @@
 
 body {
     margin: 0;
+    background: black;
     overflow: hidden;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+canvas {
+    position: absolute;
+}
+
+#background {
+    z-index: 0;
+}
+
+#board {
+    z-index: 1;
 }

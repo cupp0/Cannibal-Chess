@@ -7,7 +7,6 @@
   <style>
     body {
       margin: 0;
-      background: black;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -19,14 +18,16 @@
     canvas {
       image-rendering: pixelated;
       border: 0px0px solid black;
-      background: black;
     }
   </style>
 </head>
 <body>
+
+<div id="game-container">
+    <canvas id="background"></canvas>
+    <canvas id="board"></canvas>
 </div>
 
-<canvas id="board"></canvas>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script type="module" src="js/main.js"></script>
 

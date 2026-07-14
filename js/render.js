@@ -90,6 +90,14 @@ function generateCombinations(n) {
     return result;
 }
   
+export function drawBackground(ctx){
+    const r = Math.random()*255;
+    const g = Math.random()*255;
+    const b = Math.random()*255;
+    ctx.fillStyle = 'rgba(62, 80, 48, 255)'
+    ctx.fillRect(-5000, -5000, 10000, 10000);
+}
+
 export function drawBoard(ctx) {
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 8; x++) {
@@ -100,7 +108,7 @@ export function drawBoard(ctx) {
     ctx.strokeStyle = 'black'; 
     ctx.lineWidth = 1;          
 
-    for (let x = 0; x < 8; x++) {
+    for (let x = 0; x < 9; x++) {
       ctx.beginPath();           
       ctx.moveTo(x*32, 0);          
       ctx.lineTo(x*32, 264); 
