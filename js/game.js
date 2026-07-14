@@ -22,7 +22,6 @@ class Game {
 
     this.loadCFen(cFen);
     this.storePosition(cFen);
-    
   }
 
   forEachSquare(callback) {
