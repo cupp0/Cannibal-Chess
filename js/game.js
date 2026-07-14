@@ -270,7 +270,7 @@ class Game {
     this.checkForMate(theMove.piece.color)
     this.currentPlayer = this.getOtherPlayer();
     if (this.p2p){
-        this.p2p.send(this.getCFen())
+        this.p2p.send(theMove)
     }
     
     this.onMove?.({

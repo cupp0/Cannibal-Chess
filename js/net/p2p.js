@@ -61,7 +61,7 @@ class P2P{
 
           console.log("Received:", data);
 
-          this.game.loadCFen(data)
+          this.game.executeLiveMove(data)
       });
 
       this.conn.on("close", () => {
