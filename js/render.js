@@ -172,7 +172,7 @@ export function drawPlayers(ctx, game, mouse){
 
   if (game.you.active) {
       const flippedHand = assetBuffers.get("flippedHand")
-      const youPos = {x: game.you.x - 16 , y: game.you.y - 16}
+      const youPos = {x: 256 - game.you.x - 16 , y: 256 - game.you.y - 16}
       renderBuffer(ctx, flippedHand, youPos.x , youPos.y)
       drawArm(ctx, youPos, -1)
   }
@@ -186,9 +186,11 @@ export function drawPlayers(ctx, game, mouse){
 
 //p = buffer position, o = orientation
 function drawArm(ctx, p, o){
-  const xOff = o === 1? 12.5 : 8.5;
+  const xOff = o === 1? 12.5 : 9.5;
   const yOff = o === 1? 32 : 0;
   const leftOfWrist = {x: p.x+xOff, y: p.y+yOff}
+
+
   ctx.strokeStyle = 'black'; 
   ctx.lineWidth = 1;          
   ctx.beginPath();           
