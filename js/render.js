@@ -169,33 +169,48 @@ function highlightBuffer(buffer, amount){
 }
 
 export function drawPlayers(ctx, game, mouse){
+
+  if (game.you.active) {
+      const flippedHand = assetBuffers.get("flippedHand")
+      const youPos = {x: game.you.x - 16 , y: game.you.y - 16}
+      renderBuffer(ctx, flippedHand, youPos.x , youPos.y)
+      drawArm(youPos, -1)
+  }
+
+  const mePos = {x: mouse.world.x - 16 , y: mouse.world.y - 16}
   const hand = assetBuffers.get("hand")
-  const flippedHand = assetBuffers.get("flippedHand")
-  renderBuffer(ctx, hand, mouse.world.x - 16 , mouse.world.y - 16)
+  renderBuffer(ctx, hand, mePos.x, mePos.y )
+  drawArm(ctx, mePos, 1)
+  
+}
+
+//p = buffer position, o = orientation
+function drawArm(ctx, p, o){
+  const xOff = o === 1? 12.5 : 8.5;
+  const yOff = o === 1? 32 : 0;
+  const leftOfWrist = {x: p.x+xOff, y: p.y+yOff}
   ctx.strokeStyle = 'black'; 
   ctx.lineWidth = 1;          
   ctx.beginPath();           
-  ctx.moveTo(mouse.world.x - 3.5, mouse.world.y + 16);          
-  ctx.lineTo(mouse.world.x - 3.5, 256); 
+  ctx.moveTo(leftOfWrist.x, leftOfWrist.y);          
+  ctx.lineTo(leftOfWrist.x, 256*o); 
   ctx.stroke(); 
   ctx.beginPath();           
-  ctx.moveTo(mouse.world.x + 6.5, mouse.world.y + 16);          
-  ctx.lineTo(mouse.world.x + 6.5, 256); 
+  ctx.moveTo(leftOfWrist.x+10, leftOfWrist.y);          
+  ctx.lineTo(leftOfWrist.x+10, 256*o);  
   ctx.stroke();
-  ctx.strokeStyle = 'rgba(238, 195, 154, 255)';
+  ctx.strokeStyle = o === 1? 'rgba(238, 195, 154, 255)' : 'rgba(191, 153, 114, 255)';
   ctx.beginPath();           
-  ctx.moveTo(mouse.world.x - 2.5, mouse.world.y + 16);          
-  ctx.lineTo(mouse.world.x - 2.5, 256); 
+  ctx.moveTo(leftOfWrist.x+1, leftOfWrist.y);          
+  ctx.lineTo(leftOfWrist.x+1, 256*o); 
   ctx.stroke(); 
   ctx.fillStyle = `rgba(232, 186, 142, 255)`;
-  ctx.fillRect(mouse.world.x - 2 , mouse.world.y + 16, 7, 256);
-  ctx.strokeStyle = 'rgba(191, 153, 114, 255)';
+  ctx.fillRect(leftOfWrist.x+1.5, leftOfWrist.y , 7, 256*o);
+  ctx.strokeStyle = o === 1?'rgba(191, 153, 114, 255)' : 'rgba(238, 195, 154, 255)';
   ctx.beginPath();           
-  ctx.moveTo(mouse.world.x + 5.5, mouse.world.y + 16);          
-  ctx.lineTo(mouse.world.x + 5.5, 256); 
+  ctx.moveTo(leftOfWrist.x+9, leftOfWrist.y);          
+  ctx.lineTo(leftOfWrist.x+9, 256*o);
   ctx.stroke(); 
-
-  if (game.you.active) renderBuffer(ctx, flippedHand, game.you.x - 16 , game.you.y - 16)
 }
 
 function flipBuffer(buffer){
