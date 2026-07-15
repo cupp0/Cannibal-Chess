@@ -1,4 +1,5 @@
 class P2P{
+    
   constructor(game, opponent){
     this.game = game;
     this.opponent = opponent;
