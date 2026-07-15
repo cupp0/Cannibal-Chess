@@ -174,7 +174,7 @@ export function drawPlayers(ctx, game, mouse){
       const flippedHand = assetBuffers.get("flippedHand")
       const youPos = {x: game.you.x - 16 , y: game.you.y - 16}
       renderBuffer(ctx, flippedHand, youPos.x , youPos.y)
-      drawArm(youPos, -1)
+      drawArm(ctx, youPos, -1)
   }
 
   const mePos = {x: mouse.world.x - 16 , y: mouse.world.y - 16}
