@@ -40,7 +40,7 @@ function initBuffers(){
     addBuffer("join");
     addBuffer("titlesplash");
     addBuffer("hand");
-    assetBuffers.set("flippedHand", flipBuffer(assetBuffers.get("hand")))
+    
 }
 
 function addBuffer(name){
@@ -68,6 +68,9 @@ function addBuffer(name){
             }
         }
         assetBuffers.set(String(name), buffer)
+        if (name === "hand"){
+          assetBuffers.set("flippedHand", flipBuffer(assetBuffers.get("hand")))
+        }
     } 
 }
 
@@ -169,6 +172,29 @@ export function drawPlayers(ctx, game, mouse){
   const hand = assetBuffers.get("hand")
   const flippedHand = assetBuffers.get("flippedHand")
   renderBuffer(ctx, hand, mouse.world.x - 16 , mouse.world.y - 16)
+  ctx.strokeStyle = 'black'; 
+  ctx.lineWidth = 1;          
+  ctx.beginPath();           
+  ctx.moveTo(mouse.world.x - 3.5, mouse.world.y + 16);          
+  ctx.lineTo(mouse.world.x - 3.5, 256); 
+  ctx.stroke(); 
+  ctx.beginPath();           
+  ctx.moveTo(mouse.world.x + 6.5, mouse.world.y + 16);          
+  ctx.lineTo(mouse.world.x + 6.5, 256); 
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(238, 195, 154, 255)';
+  ctx.beginPath();           
+  ctx.moveTo(mouse.world.x - 2.5, mouse.world.y + 16);          
+  ctx.lineTo(mouse.world.x - 2.5, 256); 
+  ctx.stroke(); 
+  ctx.fillStyle = `rgba(232, 186, 142, 255)`;
+  ctx.fillRect(mouse.world.x - 2 , mouse.world.y + 16, 7, 256);
+  ctx.strokeStyle = 'rgba(191, 153, 114, 255)';
+  ctx.beginPath();           
+  ctx.moveTo(mouse.world.x + 5.5, mouse.world.y + 16);          
+  ctx.lineTo(mouse.world.x + 5.5, 256); 
+  ctx.stroke(); 
+
   if (game.you.active) renderBuffer(ctx, flippedHand, game.you.x - 16 , game.you.y - 16)
 }
 
@@ -177,7 +203,7 @@ function flipBuffer(buffer){
   for (let y = 0; y < buffer.length; y++){
     newBuffer[y] = [];
     for (let x = 0; x < buffer[y].length; x++){
-      newBuffer[buffer.length - 1 - y][buffer[y].length - 1 - x] = buffer[y][x]
+      newBuffer[y][x] = buffer[buffer.length - 1 - y][buffer[y].length - 1 - x]
     }
   }
   return newBuffer
