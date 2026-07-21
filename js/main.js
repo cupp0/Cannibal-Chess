@@ -17,7 +17,11 @@ const bgCanvas = document.getElementById("background");
 const bgCtx = bgCanvas.getContext("2d");
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
-const display = new Display(canvas, ctx, bgCanvas, bgCtx);
+const overlay = document.getElementById("overlay");
+console.log(overlay)
+const overlayCtx = overlay.getContext("2d");
+
+const display = new Display(canvas, ctx, bgCanvas, bgCtx, overlay, overlayCtx);
 const mouse = new Mouse(display);
 const page = new Page("menu")
 const startingPosition = "r,n,b,q,k,b,n,r/p,p,p,p,p,p,p,p/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/P,P,P,P,P,P,P,P/R,N,B,Q,K,B,N,R white KQkq -"
@@ -72,6 +76,7 @@ function loop() {
   drawBoard(ctx);
   animations.update(time);
   animations.draw(ctx);
+  overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);
 
   if (time % 8 === 0 && p2p) p2p.send(new Action("hand", mouse))
   
@@ -82,7 +87,7 @@ function loop() {
     case "game":
       drawPieces(ctx, game, animations, mouse);
       drawMoveDots(ctx, game);
-      drawPlayers(ctx, game, mouse);
+      drawPlayers(overlayCtx, game, mouse);
       break;
   }
   

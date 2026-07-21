@@ -1,10 +1,10 @@
 class Display {
-    constructor(canvas, ctx, bg, bgctx) {
+    constructor(canvas, ctx, bg, bgctx, ov, ovCtx) {
         this.baseSize = 256;
-        this.calculate(canvas, ctx, bg, bgctx);
+        this.calculate(canvas, ctx, bg, bgctx, ov, ovCtx);
     }
 
-    calculate(canvas, ctx, bg, bgctx) {
+    calculate(canvas, ctx, bg, bgctx, ov, ovCtx) {
         const minDim = Math.min(window.innerWidth, window.innerHeight);
         this.multiplier = Math.floor(minDim / this.baseSize);
         this.finalSize = this.baseSize * this.multiplier;
@@ -17,8 +17,14 @@ class Display {
         canvas.style.top = `${y}px`;
         bg.width = window.innerWidth;
         bg.height = window.innerHeight;
+        ov.width = window.innerWidth;
+        ov.height = window.innerHeight;
+
+        this.xOff = (ov.width-canvas.width) / 2
+        this.yOff = (ov.height-canvas.height) / 2
         
         ctx.setTransform(this.multiplier, 0, 0, this.multiplier, 0, 0);
+        ovCtx.setTransform(this.multiplier, 0, 0, this.multiplier, this.xOff, this.yOff);
        // bgctx.setTransform(this.multiplier, 0, 0, this.multiplier, 0, 0);
     }
 }

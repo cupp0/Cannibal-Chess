@@ -195,23 +195,23 @@ function drawArm(ctx, p, o){
   ctx.lineWidth = 1;          
   ctx.beginPath();           
   ctx.moveTo(leftOfWrist.x, leftOfWrist.y);          
-  ctx.lineTo(leftOfWrist.x, 256*o); 
+  ctx.lineTo(leftOfWrist.x, 500*o); 
   ctx.stroke(); 
   ctx.beginPath();           
   ctx.moveTo(leftOfWrist.x+10, leftOfWrist.y);          
-  ctx.lineTo(leftOfWrist.x+10, 256*o);  
+  ctx.lineTo(leftOfWrist.x+10, 500*o);  
   ctx.stroke();
   ctx.strokeStyle = o === 1? 'rgba(238, 195, 154, 255)' : 'rgba(191, 153, 114, 255)';
   ctx.beginPath();           
   ctx.moveTo(leftOfWrist.x+1, leftOfWrist.y);          
-  ctx.lineTo(leftOfWrist.x+1, 256*o); 
+  ctx.lineTo(leftOfWrist.x+1, 500*o); 
   ctx.stroke(); 
   ctx.fillStyle = `rgba(232, 186, 142, 255)`;
-  ctx.fillRect(leftOfWrist.x+1.5, leftOfWrist.y , 7, 256*o);
+  ctx.fillRect(leftOfWrist.x+1.5, leftOfWrist.y , 7, 500*o);
   ctx.strokeStyle = o === 1?'rgba(191, 153, 114, 255)' : 'rgba(238, 195, 154, 255)';
   ctx.beginPath();           
   ctx.moveTo(leftOfWrist.x+9, leftOfWrist.y);          
-  ctx.lineTo(leftOfWrist.x+9, 256*o);
+  ctx.lineTo(leftOfWrist.x+9, 500*o);
   ctx.stroke(); 
 }
 

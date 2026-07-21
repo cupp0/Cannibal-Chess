@@ -1,7 +1,7 @@
-export function setupInput(canvas, mouse, menu, game, page){
+export function setupInput(canvas, mouse, menu, game, page, background){
 
-    canvas.addEventListener("mousemove", e =>{
-        mouse.updateScreenCoords(getCursorPosition(canvas, e))
+    window.addEventListener("mousemove", e =>{
+        mouse.updateScreenCoords({x:e.clientX, y:e.clientY})
         switch (page.state){
             case "menu" : menu.onMouseMove(mouse); break;
             case "game" :
@@ -10,7 +10,7 @@ export function setupInput(canvas, mouse, menu, game, page){
         }    
     })
 
-    canvas.addEventListener("mousedown", e => {
+    window.addEventListener("mousedown", e => {
         switch (page.state){
             case "menu" : menu.onMouseDown(mouse); break;
             case "game" : game.onMouseDown(mouse.board.x, mouse.board.y); break;
@@ -18,7 +18,7 @@ export function setupInput(canvas, mouse, menu, game, page){
         
     });
 
-    canvas.addEventListener("mouseup", e => {
+    window.addEventListener("mouseup", e => {
         switch (page.state){
             case "game" : game.onMouseUp(mouse.board.x, mouse.board.y); break;
         }  
@@ -31,11 +31,4 @@ export function setupInput(canvas, mouse, menu, game, page){
             case "game" : game.onKeyDown(e); break;
         }      
     });
-}
-
-function getCursorPosition(canvas, event) {
-    const rect = canvas.getBoundingClientRect()
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
-    return {x: x, y: y}
 }

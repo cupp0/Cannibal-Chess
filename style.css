@@ -15,14 +15,13 @@ body {
     height: 100vh;
 }
 
-canvas {
-    position: absolute;
-}
+canvas { position: absolute; }
 
-#background {
-    z-index: 0;
-}
-
-#board {
-    z-index: 1;
+#background { z-index: 0; }
+#board { 
+    z-index: 1; 
+    pointer-events: none;}
+#overlay { 
+    z-index: 2;
+    pointer-events: none; 
 }

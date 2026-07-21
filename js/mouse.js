@@ -11,8 +11,9 @@ class Mouse{
     updateScreenCoords(coords){
         this.screen.x = coords.x;
         this.screen.y = coords.y;
-        this.world.x = Math.floor(coords.x / this.display.multiplier);
-        this.world.y = Math.floor(coords.y / this.display.multiplier);
+        this.world.x = Math.floor((coords.x - this.display.xOff) / this.display.multiplier);
+        this.world.y = Math.floor((coords.y - this.display.yOff) / this.display.multiplier);
+        console.log(this.screen)
     }
 
     updateBoardCoords(game){
