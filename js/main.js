@@ -77,8 +77,8 @@ function loop() {
   animations.update(time);
   animations.draw(ctx);
   overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);
-
-  if (time % 8 === 0 && p2p) p2p.send(new Action("hand", mouse))
+  if (time % game.me.refreshTime === 0 && p2p) p2p.send(new Action("hand", mouse))
+  game.you.update();
   
   switch(page.state){
     case "menu":

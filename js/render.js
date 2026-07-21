@@ -171,8 +171,9 @@ function highlightBuffer(buffer, amount){
 export function drawPlayers(ctx, game, mouse){
 
   if (game.you.active) {
+    console.log(game.you)
       const flippedHand = assetBuffers.get("flippedHand")
-      const youPos = {x: 256 - game.you.x - 16 , y: 256 - game.you.y - 16}
+      const youPos = {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
       renderBuffer(ctx, flippedHand, youPos.x , youPos.y)
       drawArm(ctx, youPos, -1)
   }

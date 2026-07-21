@@ -295,7 +295,7 @@ class Game {
   }
 
   receiveHandUpdate(opp){
-    this.you.setPos(opp.world.x, opp.world.y)
+    this.you.setTargetPos(opp.world.x, opp.world.y)
   }
 
   executeMove(move){
