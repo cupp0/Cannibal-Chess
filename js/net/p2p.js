@@ -61,7 +61,7 @@ class P2P{
   setupConnection() {
 
       this.conn.on("data", data => {
-
+          console.log(data)
           if (data.type === "move")this.game.receivePeerMove(data.action)
           if (data.type === "hand")this.game.receiveHandUpdate(data.action)
       });
