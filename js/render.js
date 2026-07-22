@@ -177,7 +177,7 @@ export function drawPlayers(ctx, game, mouse){
 
   if (game.you.active) {
       const flippedHand = game.you.colors.includes(game.currentPlayer) ?
-      assetBuffers.get("flippedClosedHand") : assetBuffers.get("flippedHand");
+      assetBuffers.get("flippedHand") : assetBuffers.get("flippedClosedHand");
       const youPos = {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
 
       renderBuffer(ctx, flippedHand, youPos.x , youPos.y)
@@ -255,10 +255,11 @@ export function renderSprite(ctx, name, xPos, yPos){
 }
 
 export function renderBuffer(ctx, b, xPos, yPos){
+    const finalPos = {x: Math.floor(xPos), y: Math.floor(yPos)}
     if(!b)return;
     forEachPixel(b, (x, y) =>{
         ctx.fillStyle = `rgba(${b[y][x][0]},${b[y][x][1]},${b[y][x][2]},${b[y][x][3]})`;
-        ctx.fillRect(xPos + x , yPos + y, 1, 1);
+        ctx.fillRect(finalPos.x + x , finalPos.y + y, 1, 1);
     })
 }
 

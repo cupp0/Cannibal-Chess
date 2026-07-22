@@ -247,7 +247,7 @@ class Game {
       this.hovered = null;
       return;
     }
-    if(this.getPiece({x, y})){
+    if(this.me.colors.includes(this.getPiece({x, y}).color)){
       this.hovered = {x: x, y: y}
     }
   }
@@ -267,6 +267,8 @@ class Game {
 
       this.setDrag(null, true);
     }
+
+    this.deselect();
   }
 
   onKeyDown(event){
