@@ -40,7 +40,7 @@ function initBuffers(){
     addBuffer("join");
     addBuffer("titlesplash");
     addBuffer("hand");
-    
+    addBuffer("closedHand");
 }
 
 function addBuffer(name){
@@ -70,6 +70,9 @@ function addBuffer(name){
         assetBuffers.set(String(name), buffer)
         if (name === "hand"){
           assetBuffers.set("flippedHand", flipBuffer(assetBuffers.get("hand")))
+        }
+        if (name === "closedHand"){
+          assetBuffers.set("flippedClosedHand", flipBuffer(assetBuffers.get("closedHand")))
         }
     } 
 }
@@ -171,15 +174,18 @@ function highlightBuffer(buffer, amount){
 export function drawPlayers(ctx, game, mouse){
 
   if (game.you.active) {
-    console.log(game.you)
-      const flippedHand = assetBuffers.get("flippedHand")
+      const flippedHand = game.player.includes(game.currentPlayer) ?
+      assetBuffers.get("flippedClosedHand") : assetBuffers.get("flippedHand");
       const youPos = {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
+
       renderBuffer(ctx, flippedHand, youPos.x , youPos.y)
       drawArm(ctx, youPos, -1)
   }
 
+  const hand = game.player.includes(game.currentPlayer) ?
+  assetBuffers.get("hand") : assetBuffers.get("closedHand")
   const mePos = {x: mouse.world.x - 16 , y: mouse.world.y - 16}
-  const hand = assetBuffers.get("hand")
+
   renderBuffer(ctx, hand, mePos.x, mePos.y )
   drawArm(ctx, mePos, 1)
   

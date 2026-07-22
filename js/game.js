@@ -203,12 +203,6 @@ class Game {
 
     if (this.selected){
 
-      //deselect when clicking the same piece twice
-      if (this.selected.x === x && this.selected.y === y){
-        this.deselect();
-        return;
-      }
-
       //execute a move
       const theMove = this.validMoves.find(move => this.squareEquals(move.to, {x, y}));
       if(theMove && this.currentPlayer === theMove.piece.color) {
