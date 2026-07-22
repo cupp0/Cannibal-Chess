@@ -8,6 +8,10 @@ export default class Player{
         this.active = false;
     }
 
+    setColors(colors){
+        this.colors = colors;
+    }
+
     setTargetPos(x, y){
         this.frameCount = 0;
         this.targetPos = {x: x, y: y}

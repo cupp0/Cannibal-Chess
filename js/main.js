@@ -33,7 +33,7 @@ game.onMove = event => {
         new MoveAnimation(
             time, 
             event.theMove,
-            game.dragging,
+            game.currentDrag,
             game.boardOrientation
         )
     );
@@ -54,14 +54,16 @@ const menu = new Menu({
     hostRoom(name) {
       p2p.host(name);
       game.setP2P(p2p)
-      game.setPlayer(["white"])
+      game.setPlayerColors(game.me, ["white"])
+      game.setPlayerColors(game.you, ["black"])
       page.setState("game");
     },
 
     joinRoom(name) {
       p2p.join(name)
       game.setP2P(p2p)
-      game.setPlayer(["black"])
+      game.setPlayerColors(game.me, ["black"])
+      game.setPlayerColors(game.you, ["white"])
       game.boardOrientation *= -1;
       page.setState("game");
     }

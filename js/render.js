@@ -152,7 +152,9 @@ function drawPiece(game, squareX, squareY, ctx){
 
 function drawDraggedPiece(ctx, game, squareX, squareY, mouse){
     const buffer = assetBuffers.get(game.board[squareY][squareX].getAssetString());
-    const pos = {x: mouse.world.x - 16, y: mouse.world.y-16}
+    const pos = game.me.colors.includes(game.board[squareY][squareX].color) ?
+    {x: mouse.world.x - 16, y: mouse.world.y-16} :
+    {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
     renderBuffer(ctx, highlightBuffer(buffer, 255), pos.x, pos.y)
 }
 
@@ -174,7 +176,7 @@ function highlightBuffer(buffer, amount){
 export function drawPlayers(ctx, game, mouse){
 
   if (game.you.active) {
-      const flippedHand = game.player.includes(game.currentPlayer) ?
+      const flippedHand = game.you.colors.includes(game.currentPlayer) ?
       assetBuffers.get("flippedClosedHand") : assetBuffers.get("flippedHand");
       const youPos = {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
 
@@ -182,7 +184,7 @@ export function drawPlayers(ctx, game, mouse){
       drawArm(ctx, youPos, -1)
   }
 
-  const hand = game.player.includes(game.currentPlayer) ?
+  const hand = game.me.colors.includes(game.currentPlayer) ?
   assetBuffers.get("hand") : assetBuffers.get("closedHand")
   const mePos = {x: mouse.world.x - 16 , y: mouse.world.y - 16}
 

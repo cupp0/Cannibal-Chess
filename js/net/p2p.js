@@ -16,7 +16,7 @@ class P2P{
               this.conn = conn;
 
               console.log("Opponent connected.");
-              this.game.you.active = true;    
+              this.game.setupOnlineGame(true);
               this.setupConnection();
           });
           return true;
@@ -46,7 +46,7 @@ class P2P{
 
           this.conn.on("open", () => {
               console.log("Connected!");
-              this.game.you.active = true;
+              this.game.setupOnlineGame(false)
               this.setupConnection();
           });
 
@@ -63,6 +63,7 @@ class P2P{
       this.conn.on("data", data => {
           if (data.type === "move")this.game.receivePeerMove(data.action)
           if (data.type === "hand")this.game.receiveHandUpdate(data.action)
+          if (data.type === "drag")this.game.receiveDragUpdate(data.action)
       });
 
       this.conn.on("close", () => {

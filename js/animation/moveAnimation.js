@@ -2,7 +2,7 @@ import {getBuffer, renderBuffer} from '../render.js';
 
 export default class MoveAnimation {
 
-    constructor(startTime, move, dragging, orientation) {
+    constructor(startTime, move, drag, orientation) {
         this.startTime = startTime; 
         this.currentTime = startTime;
         this.duration = 4;
@@ -12,7 +12,7 @@ export default class MoveAnimation {
         this.to = orientation === 1 ? {x: move.to.x, y: move.to.y} : {x: 7-move.to.x, y: 7-move.to.y}
         this.buffer = getBuffer(move.piece.color+"-"+move.piece.label.toLowerCase());
         this.finished = false;
-        if (dragging) this.finished = true;
+        if (drag) this.finished = true;
     }
 
     update(t) {

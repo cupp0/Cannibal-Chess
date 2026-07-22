@@ -8,6 +8,8 @@ import Cannibal from './pieces/Cannibal.js';
 import { playMoveSound, playCaptureSound, playCannibalSound } from "./audio.js";
 import Move from './move.js';
 import Action from './net/action.js';
+import PieceDrag from './drag.js';
+
 
 class Game {
   constructor(id, cFen, me, you){
@@ -17,12 +19,11 @@ class Game {
     this.boardOrientation = 1,
     this.selected = null,
     this.hovered = null,
-    this.dragging = null,
     this.validMoves = [],
     this.history = [],
     this.boardIndex = 0,
     this.p2p = null;
-    this.setPlayer(["black", "white"]);
+    this.setPlayerColors(this.me, ["black", "white"]);
     this.loadCFen(cFen);
     this.storePosition(cFen);
   }
@@ -54,9 +55,16 @@ class Game {
     this.p2p = p2p;
   }
 
+  setupOnlineGame(isHost){
+      this.you.active = true;    
+      this.setPlayerColors(this.me, isHost ? ["white"] : ["black"])
+      this.setPlayerColors(this.you, isHost ? ["black"] : ["white"])
+  }
+
   //list of colors this machine can move 
-  setPlayer(colors){
-    this.player = colors;
+  setPlayerColors(player, colors){
+    if (!player) return;
+    player.setColors(colors);
   }
 
   getPiece(square){
@@ -84,8 +92,15 @@ class Game {
   }
 
   isDragging(x, y){
-    if (!this.dragging) return false;
-    return this.dragging.x === x && this.dragging.y === y;
+    if (!this.currentDrag) return false;
+    return this.currentDrag.square.x === x && this.currentDrag.square.y === y;
+  }
+
+  setDrag(theDrag, isLocalSource){
+    this.currentDrag = theDrag;
+    if (this.p2p && isLocalSource){
+        this.p2p.send(new Action("drag", this.currentDrag))
+    }
   }
 
   setPiece(square, piece){
@@ -201,6 +216,9 @@ class Game {
   //coordinates of the square that was pressed
   onMouseDown(x, y){
 
+    //do nothing for now if its not this players turn
+    if (!this.me.colors.includes(this.currentPlayer)) return;
+
     if (this.selected){
 
       //execute a move
@@ -217,11 +235,14 @@ class Game {
     }
 
     this.trySelect(x, y);
+
+    if (this.selected){
+      this.setDrag(new PieceDrag(this.me, this.selected), true)
+    }
   }
 
   onMouseMove(x, y){
     if ( x < 0 || x > 7 || y < 0 || y > 7) return;
-    if (this.dragging) return;
     if (!this.getPiece({x, y})) {
       this.hovered = null;
       return;
@@ -232,7 +253,10 @@ class Game {
   }
 
   onMouseUp(x, y){
-    if (this.dragging){
+
+    if (!this.me.colors.includes(this.currentPlayer)) return;
+
+    if (this.currentDrag){
       
       //execute a move
       const theMove = this.validMoves.find(move => this.squareEquals(move.to, {x, y}));
@@ -241,7 +265,7 @@ class Game {
         return;
       } 
 
-      this.dragging = null;
+      this.setDrag(null, true);
     }
   }
 
@@ -290,6 +314,11 @@ class Game {
 
   receiveHandUpdate(opp){
     this.you.setTargetPos(opp.world.x, opp.world.y)
+  }
+
+  receiveDragUpdate(drag){
+    if (!drag){this.setDrag(null, false); return;}
+    this.setDrag(new PieceDrag(drag.player, drag.square), false)
   }
 
   executeMove(move){
@@ -424,9 +453,8 @@ class Game {
   trySelect(x, y){
     const piece = this.getPiece({x, y});
     if (piece){
-      if (!this.player.includes(piece.color)) return;
+      if (!this.me.colors.includes(piece.color)) return;
       this.selected = {x: x, y: y}
-      this.dragging = {x: x, y: y}
       this.updateValidMoves(this.selected);
     }  
   }
