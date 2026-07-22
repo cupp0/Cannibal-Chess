@@ -22,6 +22,7 @@ class Game {
     this.validMoves = [],
     this.history = [],
     this.boardIndex = 0,
+    this.handShake = true;
     this.p2p = null;
     this.setPlayerColors(this.me, ["black", "white"]);
     this.loadCFen(cFen);
@@ -59,6 +60,7 @@ class Game {
       this.you.active = true;    
       this.setPlayerColors(this.me, isHost ? ["white"] : ["black"])
       this.setPlayerColors(this.you, isHost ? ["black"] : ["white"])
+      this.handShake = false;
   }
 
   //list of colors this machine can move 
@@ -204,7 +206,7 @@ class Game {
     fen += " ";
 
     //enpassant
-    if (this.epTarget){ fen += this.epTarget }   
+    if (this.epTarget){ fen += String(this.epTarget.x)+String(this.epTarget.y) }   
     else { fen += "-" }
     fen += " ";
 
@@ -452,7 +454,17 @@ class Game {
     }
   }
 
+  checkForHandShake(){
+    const mePos = this.me.getAbsolutePosition();
+    const youPos = this.you.getAbsolutePosition();
+    if (Math.abs(mePos.x - youPos.x) < 10 && Math.abs(mePos.y - youPos.y) < 10){
+      this.handShake = true;
+      console.log("shook")
+    }
+  }
+
   trySelect(x, y){
+    if (!this.handShake) return;
     const piece = this.getPiece({x, y});
     if (piece){
       if (!this.me.colors.includes(piece.color)) return;

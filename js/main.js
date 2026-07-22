@@ -55,6 +55,7 @@ const menu = new Menu({
       game.setP2P(p2p)
       game.setPlayerColors(game.me, ["white"])
       game.setPlayerColors(game.you, ["black"])
+      game.handShake = false;
       page.setState("game");
     },
 
@@ -78,8 +79,12 @@ function loop() {
   animations.update(time);
   animations.draw(ctx);
   overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);
-  if (time % game.me.refreshTime === 0 && p2p) p2p.send(new Action("hand", mouse))
-  game.you.update();
+  if (game.you.active){
+    if (time % game.me.refreshTime === 0) p2p.send(new Action("hand", mouse));
+    game.you.update();
+    game.me.updateLocal(mouse);
+    game.checkForHandShake();
+  }
   
   switch(page.state){
     case "menu":

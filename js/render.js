@@ -274,7 +274,7 @@ export function renderBuffer(ctx, b, xPos, yPos){
     if(!b)return;
     forEachPixel(b, (x, y) =>{
         ctx.fillStyle = `rgba(${b[y][x][0]},${b[y][x][1]},${b[y][x][2]},${b[y][x][3]})`;
-        ctx.fillRect(finalPos.x + x , finalPos.y + y, 1, 1);
+        ctx.fillRect(finalPos.x + x , finalPos.y + y, 1.05, 1.05);
     })
 }
 

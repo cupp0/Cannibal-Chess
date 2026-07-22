@@ -16,8 +16,8 @@ class P2P{
               this.conn = conn;
 
               console.log("Opponent connected.");
-              this.game.setupOnlineGame(true);
               this.setupConnection();
+              this.game.setupOnlineGame(true);
           });
           return true;
       });
@@ -46,8 +46,9 @@ class P2P{
 
           this.conn.on("open", () => {
               console.log("Connected!");
-              this.game.setupOnlineGame(false)
               this.setupConnection();
+              this.game.setupOnlineGame(false)
+              
           });
 
           this.conn.on("error", err => {

@@ -26,4 +26,14 @@ export default class Player{
             this.frameCount++;
         }
     }
+
+    updateLocal(mouse){
+        this.pos = {x: mouse.world.x, y: mouse.world.y}
+    }
+
+    getAbsolutePosition(){
+        return this.colors.includes("white") ?
+            this.pos : 
+            {x:256 - this.pos.x, y:256 - this.pos.y}
+    }
 }
