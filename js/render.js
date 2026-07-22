@@ -139,14 +139,20 @@ export function drawPieces(ctx, game, animations, mouse){
 }
 
 function drawPiece(game, squareX, squareY, ctx){
-    const buffer = assetBuffers.get(game.board[squareY][squareX].getAssetString());
+    const piece = game.board[squareY][squareX];
+    const buffer = assetBuffers.get(piece.getAssetString());
     const actualTile = game.boardOrientation === 1 ? {x: squareX, y: squareY} : {x: 7-squareX, y: 7-squareY}
     const pos = {x: actualTile.x * TILE, y: actualTile.y * TILE}
+
+    if (piece.label.toLowerCase() === "k" && game.isKingAttacked(piece.color)){
+        renderBuffer(ctx, highlightBuffer(buffer, 127, "red"), pos.x, pos.y)
+        return;
+    }
 
     let highlight = 0;
     if (game.isHovered(squareX, squareY)) highlight += 127;
     if (game.isSelected(squareX, squareY)) highlight += 127;
-    if (highlight > 0)renderBuffer(ctx, highlightBuffer(buffer, highlight), pos.x, pos.y)
+    if (highlight > 0)renderBuffer(ctx, highlightBuffer(buffer, highlight, "gray"), pos.x, pos.y)
     else renderBuffer(ctx, buffer, pos.x, pos.y)
 }
 
@@ -155,16 +161,25 @@ function drawDraggedPiece(ctx, game, squareX, squareY, mouse){
     const pos = game.me.colors.includes(game.board[squareY][squareX].color) ?
     {x: mouse.world.x - 16, y: mouse.world.y-16} :
     {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
-    renderBuffer(ctx, highlightBuffer(buffer, 255), pos.x, pos.y)
+    renderBuffer(ctx, highlightBuffer(buffer, 255, "gray"), pos.x, pos.y)
 }
 
-function highlightBuffer(buffer, amount){  
+function highlightBuffer(buffer, amount, type){  
   const newBuffer = []
   for (let y = 0; y < buffer.length; y++){
     newBuffer[y] = [];
     for (let x = 0; x < buffer[y].length; x++){
       if (buffer[y][x][0] + buffer[y][x][1] + buffer[y][x][2] === 0 && buffer[y][x][3] === 1){
-        newBuffer[y][x] = [amount, amount , amount, 1];
+        switch(type){
+          case "gray" :
+          newBuffer[y][x] = [amount, amount , amount, 1]; break;
+          case "red" :
+          newBuffer[y][x] = [amount, 0 , 0, 1]; break;
+          case "green" :
+          newBuffer[y][x] = [0, amount , 0, 1]; break;
+          case "blue" :
+          newBuffer[y][x] = [0, 0 , amount, 1]; break;
+        }
       } else {
         newBuffer[y][x] = buffer[y][x];
       }
@@ -264,9 +279,17 @@ export function renderBuffer(ctx, b, xPos, yPos){
 }
 
 export function drawMoveDots(ctx, game) {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-
+    
     for (const m of game.validMoves) {
+      switch(m.type){
+        case "normal" : ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; break;
+        case "castling" : ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; break;
+        case "cannibal" : ctx.fillStyle = "rgba(0, 100, 0, 0.5)"; break;
+        case "capture" : ctx.fillStyle = "rgba(0, 0, 100, 0.5)"; break;
+        case "enPassant" : ctx.fillStyle = "rgba(0, 0, 100, 0.5)"; break;
+        case "enPassantable" : ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; break;
+        case "promotion" : ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; break;
+      }
       const actualTile = game.boardOrientation === 1 ? {x: m.to.x, y: m.to.y} : {x: 7-m.to.x, y: 7-m.to.y}
       ctx.beginPath();
       ctx.fillRect(

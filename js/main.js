@@ -18,7 +18,6 @@ const bgCtx = bgCanvas.getContext("2d");
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 const overlay = document.getElementById("overlay");
-console.log(overlay)
 const overlayCtx = overlay.getContext("2d");
 
 const display = new Display(canvas, ctx, bgCanvas, bgCtx, overlay, overlayCtx);
