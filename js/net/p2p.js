@@ -65,7 +65,7 @@ class P2P{
           if (data.type === "move")this.game.receivePeerMove(data.action)
           if (data.type === "hand")this.game.receiveHandUpdate(data.action)
           if (data.type === "drag")this.game.receiveDragUpdate(data.action)
-          if (data.type === "handshake")this.game.receiveHandShakeUpdate(data.action)
+          if (data.type === "handshake")this.game.receiveHandShake()
       });
 
       this.conn.on("close", () => {

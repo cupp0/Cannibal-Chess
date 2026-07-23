@@ -324,8 +324,8 @@ class Game {
     this.setDrag(new PieceDrag(drag.player, drag.square), false)
   }
 
-  receiveHandShakeUpdate(isShaking){
-    this.activeHandShake = isShaking;
+  receiveHandShake(){
+      this.activeHandShake = true;
   }
 
   executeMove(move){
@@ -466,12 +466,11 @@ class Game {
         if (shake){
             this.activeHandShake = true;
             this.handShakeComplete = true;
-            this.p2p.send(new Action("handshake", true))
+            this.p2p.send(new Action("handshake", ""))
         } else this.activeHandShake = false;
     } else {
       if (shake) return;
-      this.activeHandShake = true;
-      this.p2p.send(new Action("handshake", false))
+      this.activeHandShake = false;
     }
   }
 

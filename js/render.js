@@ -41,7 +41,7 @@ function initBuffers(){
     addBuffer("titlesplash");
     addBuffer("hand");
     addBuffer("closedHand");
-    addBuffer("handshake");
+    addBuffer("handShake");
 }
 
 function addBuffer(name){
@@ -192,13 +192,12 @@ function highlightBuffer(buffer, amount, type){
 export function drawPlayers(ctx, game, mouse){
 
   if (game.activeHandShake){
-      const handshakeBuffer = assetBuffers.get("handshake");
+      const handshakeBuffer = assetBuffers.get("handShake");
       const mePos = {x: mouse.world.x - 16 , y: mouse.world.y - 16}
-      const youPos = {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
 
       renderBuffer(ctx, handshakeBuffer, mePos.x, mePos.y )
       drawArm(ctx, mePos, 1)
-      drawArm(ctx, youPos, -1)
+      drawArm(ctx, mePos, -1)
 
       return;
   }
@@ -223,7 +222,7 @@ export function drawPlayers(ctx, game, mouse){
 
 //p = buffer position, o = orientation
 function drawArm(ctx, p, o){
-  const xOff = o === 1? 12.5 : 9.5;
+  const xOff = 11.5
   const yOff = o === 1? 32 : 0;
   const leftOfWrist = {x: p.x+xOff, y: p.y+yOff}
 
@@ -235,8 +234,8 @@ function drawArm(ctx, p, o){
   ctx.lineTo(leftOfWrist.x, 500*o); 
   ctx.stroke(); 
   ctx.beginPath();           
-  ctx.moveTo(leftOfWrist.x+10, leftOfWrist.y);          
-  ctx.lineTo(leftOfWrist.x+10, 500*o);  
+  ctx.moveTo(leftOfWrist.x+9, leftOfWrist.y);          
+  ctx.lineTo(leftOfWrist.x+9, 500*o);  
   ctx.stroke();
   ctx.strokeStyle = o === 1? 'rgba(238, 195, 154, 255)' : 'rgba(191, 153, 114, 255)';
   ctx.beginPath();           
@@ -244,11 +243,11 @@ function drawArm(ctx, p, o){
   ctx.lineTo(leftOfWrist.x+1, 500*o); 
   ctx.stroke(); 
   ctx.fillStyle = `rgba(232, 186, 142, 255)`;
-  ctx.fillRect(leftOfWrist.x+1.5, leftOfWrist.y , 7, 500*o);
+  ctx.fillRect(leftOfWrist.x+1.5, leftOfWrist.y , 6, 500*o);
   ctx.strokeStyle = o === 1?'rgba(191, 153, 114, 255)' : 'rgba(238, 195, 154, 255)';
   ctx.beginPath();           
-  ctx.moveTo(leftOfWrist.x+9, leftOfWrist.y);          
-  ctx.lineTo(leftOfWrist.x+9, 500*o);
+  ctx.moveTo(leftOfWrist.x+8, leftOfWrist.y);          
+  ctx.lineTo(leftOfWrist.x+8, 500*o);
   ctx.stroke(); 
 }
 
@@ -289,6 +288,10 @@ export function renderBuffer(ctx, b, xPos, yPos){
         ctx.fillStyle = `rgba(${b[y][x][0]},${b[y][x][1]},${b[y][x][2]},${b[y][x][3]})`;
         ctx.fillRect(finalPos.x + x , finalPos.y + y, 1.05, 1.05);
     })
+}
+
+export function renderMessage(msg){
+  //render box then text
 }
 
 export function drawMoveDots(ctx, game) {
