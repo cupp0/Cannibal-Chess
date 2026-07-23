@@ -41,6 +41,7 @@ function initBuffers(){
     addBuffer("titlesplash");
     addBuffer("hand");
     addBuffer("closedHand");
+    addBuffer("handshake");
 }
 
 function addBuffer(name){
@@ -189,6 +190,18 @@ function highlightBuffer(buffer, amount, type){
 }
 
 export function drawPlayers(ctx, game, mouse){
+
+  if (game.activeHandShake){
+      const handshakeBuffer = assetBuffers.get("handshake");
+      const mePos = {x: mouse.world.x - 16 , y: mouse.world.y - 16}
+      const youPos = {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
+
+      renderBuffer(ctx, handshakeBuffer, mePos.x, mePos.y )
+      drawArm(ctx, mePos, 1)
+      drawArm(ctx, youPos, -1)
+
+      return;
+  }
 
   if (game.you.active) {
       const flippedHand = game.you.colors.includes(game.currentPlayer) ?

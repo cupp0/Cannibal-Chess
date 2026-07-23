@@ -22,7 +22,6 @@ class Game {
     this.validMoves = [],
     this.history = [],
     this.boardIndex = 0,
-    this.handShake = true;
     this.p2p = null;
     this.setPlayerColors(this.me, ["black", "white"]);
     this.loadCFen(cFen);
@@ -60,7 +59,7 @@ class Game {
       this.you.active = true;    
       this.setPlayerColors(this.me, isHost ? ["white"] : ["black"])
       this.setPlayerColors(this.you, isHost ? ["black"] : ["white"])
-      this.handShake = false;
+      this.handShakeComplete = false;
   }
 
   //list of colors this machine can move 
@@ -325,6 +324,10 @@ class Game {
     this.setDrag(new PieceDrag(drag.player, drag.square), false)
   }
 
+  receiveHandShakeUpdate(isShaking){
+    this.activeHandShake = isShaking;
+  }
+
   executeMove(move){
     //all moves do this
     this.relocatePiece(move.from, move.to)
@@ -457,14 +460,23 @@ class Game {
   checkForHandShake(){
     const mePos = this.me.getAbsolutePosition();
     const youPos = this.you.getAbsolutePosition();
-    if (Math.abs(mePos.x - youPos.x) < 10 && Math.abs(mePos.y - youPos.y) < 10){
-      this.handShake = true;
-      console.log("shook")
+    const dist = {x: Math.abs(mePos.x - youPos.x), y: Math.abs(mePos.y - youPos.y)}
+    const shake = dist.x < 10 && dist.y < 10
+    if (this.activeHandShake === false){
+        if (shake){
+            this.activeHandShake = true;
+            this.handShakeComplete = true;
+            this.p2p.send(new Action("handshake", true))
+        } else this.activeHandShake = false;
+    } else {
+      if (shake) return;
+      this.activeHandShake = true;
+      this.p2p.send(new Action("handshake", false))
     }
   }
 
   trySelect(x, y){
-    if (!this.handShake) return;
+    if (this.handShakeComplete === false) return;
     const piece = this.getPiece({x, y});
     if (piece){
       if (!this.me.colors.includes(piece.color)) return;
