@@ -73,6 +73,7 @@ function addBuffer(name){
           assetBuffers.set("flippedHand", flipBuffer(assetBuffers.get("hand")))
         }
         if (name === "closedHand"){
+          console.log("here")
           assetBuffers.set("flippedClosedHand", flipBuffer(assetBuffers.get("closedHand")))
         }
     } 
@@ -109,7 +110,9 @@ export function drawBackground(ctx){
 export function drawBoard(ctx) {
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 8; x++) {
-        ctx.fillStyle = (x + y) % 2 === 0 ? "rgba(160, 148, 130, 255)" : "rgba(18, 24, 37, 255)";
+        ctx.fillStyle = (x + y) % 2 === 0 ? 
+        "rgba(180, 168, 130, 255)" : 
+        "rgba(28, 34, 47, 255)";
         ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
       }
     }
@@ -202,15 +205,17 @@ export function drawPlayers(ctx, game, mouse){
       return;
   }
 
+  //render opponent
   if (game.you.active) {
-      const flippedHand = game.you.colors.includes(game.currentPlayer) ?
+      const renderedHand = game.you.colors.includes(game.currentPlayer) ?
       assetBuffers.get("flippedHand") : assetBuffers.get("flippedClosedHand");
       const youPos = {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
 
-      renderBuffer(ctx, flippedHand, youPos.x , youPos.y)
+      renderBuffer(ctx, renderedHand, youPos.x , youPos.y)
       drawArm(ctx, youPos, -1)
   }
 
+  //render me
   const hand = game.me.colors.includes(game.currentPlayer) ?
   assetBuffers.get("hand") : assetBuffers.get("closedHand")
   const mePos = {x: mouse.world.x - 16 , y: mouse.world.y - 16}
@@ -298,23 +303,33 @@ export function drawMoveDots(ctx, game) {
     
     for (const m of game.validMoves) {
       switch(m.type){
-        case "normal" : ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; break;
-        case "castling" : ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; break;
-        case "cannibal" : ctx.fillStyle = "rgba(0, 100, 0, 0.5)"; break;
-        case "capture" : ctx.fillStyle = "rgba(0, 0, 100, 0.5)"; break;
-        case "enPassant" : ctx.fillStyle = "rgba(0, 0, 100, 0.5)"; break;
-        case "enPassantable" : ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; break;
-        case "promotion" : ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; break;
+        case "normal" : ctx.fillStyle = "rgba(100, 100, 100, 0.5)"; break;
+        case "castling" : ctx.fillStyle = "rgba(100, 100, 100, 0.5)"; break;
+        case "cannibal" : ctx.fillStyle = "rgba(50, 255, 100, 0.25)"; break;
+        case "capture" : ctx.fillStyle = "rgba(200, 50, 208, 0.25)"; break;
+        case "enPassant" : ctx.fillStyle = "rgba(156, 66, 208, 0.25)"; break;
+        case "enPassantable" : ctx.fillStyle = "rgba(100, 100, 100, 0.5)"; break;
+        case "promotion" : ctx.fillStyle = "rgba(100, 100, 100, 0.5)"; break;
       }
       const actualTile = game.boardOrientation === 1 ? {x: m.to.x, y: m.to.y} : {x: 7-m.to.x, y: 7-m.to.y}
       ctx.beginPath();
       ctx.fillRect(
-        actualTile.x * TILE + TILE/2 - MOVEDOT/2,
-        actualTile.y * TILE + TILE/2 - MOVEDOT/2,
-        8,
-        8
+        actualTile.x * TILE,
+        actualTile.y * TILE,
+        32,
+        32
       );
-      ctx.fill();
+
+      // 2. Set the stroke color and line width
+      ctx.strokeStyle = "rgba(255, 255, 255, .75)";
+      ctx.lineWidth = 1;
+
+      // 3. Draw the outlined rectangle
+      ctx.strokeRect(actualTile.x * TILE,
+              actualTile.y * TILE,
+              32,
+              32
+      );
     }
 }
 

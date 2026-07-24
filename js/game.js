@@ -69,7 +69,11 @@ class Game {
   }
 
   getPiece(square){
+    try{
     return this.board[square.y][square.x]
+    } catch (TypeError){
+      console.log(square)
+    }
   }
 
   getHover(){
