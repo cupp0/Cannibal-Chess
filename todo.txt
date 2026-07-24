@@ -1,7 +1,0 @@
-https://github.com/OmarShehata/web-boilerplate/tree/main/basic
-
- - get pnpm
- - setup vite bundler
- - "pnpm dev" runs server
- - "pnpm build" bundles everything
- - 
