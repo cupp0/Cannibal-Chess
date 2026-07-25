@@ -1,7 +1,8 @@
-export function setupInput(canvas, mouse, menu, game, page, background){
+export function setupInput(canvas, mouse, menu, clock, game, page, background){
 
     window.addEventListener("mousemove", e =>{
         mouse.updateScreenCoords({x:e.clientX, y:e.clientY})
+        clock.onMouseMove(mouse);
         switch (page.state){
             case "menu" : menu.onMouseMove(mouse); break;
             case "game" :
@@ -11,6 +12,7 @@ export function setupInput(canvas, mouse, menu, game, page, background){
     })
 
     window.addEventListener("mousedown", e => {
+        clock.onMouseDown(mouse);
         switch (page.state){
             case "menu" : menu.onMouseDown(mouse); break;
             case "game" : game.onMouseDown(mouse.board.x, mouse.board.y); break;
@@ -19,10 +21,10 @@ export function setupInput(canvas, mouse, menu, game, page, background){
     });
 
     window.addEventListener("mouseup", e => {
+        clock.onMouseUp(mouse);
         switch (page.state){
             case "game" : game.onMouseUp(mouse.board.x, mouse.board.y); break;
         }  
-        
     });
 
     window.addEventListener("keydown", e => {

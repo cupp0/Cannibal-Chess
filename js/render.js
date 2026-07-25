@@ -2,6 +2,7 @@
 const TILE = 32;
 const MOVEDOT = 8;
 const assetBuffers = new Map()
+const flippers = ["hand", "closedHand", "clockBody", "clockButtonUp", "clockButtonDown", "clockTimerKnob"]
 
 function forEachSquare(callback) {
   for (let x = 0; x < 8; x++) {
@@ -42,6 +43,10 @@ function initBuffers(){
     addBuffer("hand");
     addBuffer("closedHand");
     addBuffer("handShake");
+    addBuffer("clockBody");
+    addBuffer("clockButtonUp");
+    addBuffer("clockButtonDown");
+    addBuffer("clockTimerKnob");
 }
 
 function addBuffer(name){
@@ -69,12 +74,15 @@ function addBuffer(name){
             }
         }
         assetBuffers.set(String(name), buffer)
-        if (name === "hand"){
-          assetBuffers.set("flippedHand", flipBuffer(assetBuffers.get("hand")))
+        
+        if (flippers.includes(name)){
+          assetBuffers.set(
+              "flipped"+name.charAt(0).toUpperCase() + name.slice(1),
+              flipBuffer(assetBuffers.get(name), true, true))
         }
-        if (name === "closedHand"){
-          console.log("here")
-          assetBuffers.set("flippedClosedHand", flipBuffer(assetBuffers.get("closedHand")))
+        
+        if (name === "handShake"){
+          assetBuffers.set("flippedHandShake", flipBuffer(assetBuffers.get("handShake"), false, true))
         }
     } 
 }
@@ -195,8 +203,8 @@ function highlightBuffer(buffer, amount, type){
 export function drawPlayers(ctx, game, mouse){
 
   if (game.activeHandShake){
-      const handshakeBuffer = assetBuffers.get("handShake");
-      const mePos = {x: mouse.world.x - 16 , y: mouse.world.y - 16}
+      const handshakeBuffer = assetBuffers.get("flippedHandShake");
+      const mePos = {x: mouse.world.x - 12 , y: mouse.world.y - 8}
 
       renderBuffer(ctx, handshakeBuffer, mePos.x, mePos.y )
       drawArm(ctx, mePos, 1)
@@ -209,7 +217,7 @@ export function drawPlayers(ctx, game, mouse){
   if (game.you.active) {
       const renderedHand = game.you.colors.includes(game.currentPlayer) ?
       assetBuffers.get("flippedHand") : assetBuffers.get("flippedClosedHand");
-      const youPos = {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
+      const youPos = {x: 256 - game.you.pos.x - 12 , y: 256 - game.you.pos.y - 18}
 
       renderBuffer(ctx, renderedHand, youPos.x , youPos.y)
       drawArm(ctx, youPos, -1)
@@ -218,7 +226,7 @@ export function drawPlayers(ctx, game, mouse){
   //render me
   const hand = game.me.colors.includes(game.currentPlayer) ?
   assetBuffers.get("hand") : assetBuffers.get("closedHand")
-  const mePos = {x: mouse.world.x - 16 , y: mouse.world.y - 16}
+  const mePos = {x: mouse.world.x - 13 , y: mouse.world.y - 3}
 
   renderBuffer(ctx, hand, mePos.x, mePos.y )
   drawArm(ctx, mePos, 1)
@@ -256,12 +264,20 @@ function drawArm(ctx, p, o){
   ctx.stroke(); 
 }
 
-function flipBuffer(buffer){
+function flipBuffer(buffer, horizontal, vertical){
   const newBuffer = []
   for (let y = 0; y < buffer.length; y++){
     newBuffer[y] = [];
     for (let x = 0; x < buffer[y].length; x++){
-      newBuffer[y][x] = buffer[buffer.length - 1 - y][buffer[y].length - 1 - x]
+      if (vertical && !horizontal){
+          newBuffer[y][x] = buffer[buffer.length - 1 - y][x]
+      }
+      if (horizontal && !vertical){
+          newBuffer[y][x] = buffer[y][buffer[y].length - 1 - x]
+      }
+      if (horizontal && vertical){
+          newBuffer[y][x] = buffer[buffer.length - 1 - y][buffer[y].length - 1 - x]
+      }
     }
   }
   return newBuffer
@@ -344,4 +360,50 @@ export function drawMenu(ctx, menu) {
           widget.draw(ctx);
       }
     }
+}
+
+//get board position from display
+export function drawClock(clock, ctx) {
+    renderBuffer(ctx, assetBuffers.get("clockBody"), clock.pos.x, clock.pos.y);
+    for (const widget of clock.widgets){
+        const buffer = assetBuffers.get(widget.name);
+        if (buffer) renderBuffer(ctx, buffer, widget.x, widget.y);
+    }
+        ctx.strokeStyle = 'black'
+
+    renderClockHands(ctx, clock.blackTime, clock.pos.x+21, clock.pos.y + 21);
+    renderClockHands(ctx, clock.whiteTime, clock.pos.x+21, clock.pos.y + 69);
+}
+
+function renderClockHands(ctx, ms, x, y){
+    const time = ms / 1000;
+    const radius = 16;
+    const seconds = time % 60;
+    const minutes = (time / 60) % 60;
+
+    // Angles in radians.
+    // 0 rad = 3 o'clock = your rotated 12 o'clock.
+    const secondAngle = (seconds / 60) * Math.PI * 2;
+    const minuteAngle = (minutes / 60) * Math.PI * 2;
+
+    const secondLength = radius * 0.9;
+    const minuteLength = radius * 0.65;
+
+    ctx.beginPath();
+
+    // Minute hand
+    ctx.moveTo(x, y);
+    ctx.lineTo(
+        x + Math.cos(minuteAngle) * minuteLength,
+        y + Math.sin(minuteAngle) * minuteLength
+    );
+
+    // Second hand
+    ctx.moveTo(x, y);
+    ctx.lineTo(
+        x + Math.cos(secondAngle) * secondLength,
+        y + Math.sin(secondAngle) * secondLength
+    );
+
+    ctx.stroke();
 }

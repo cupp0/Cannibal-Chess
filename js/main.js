@@ -1,6 +1,6 @@
 import Game from './game.js';
 import P2P from './net/p2p.js';
-import {drawBackground, drawBoard, drawPieces, drawMoveDots, drawPlayers, drawMenu } from './render.js';
+import {drawBackground, drawBoard, drawPieces, drawMoveDots, drawPlayers, drawMenu, drawClock } from './render.js';
 import {setupInput} from './input.js';
 import Display from './display.js';
 import Mouse from './mouse.js';
@@ -8,6 +8,7 @@ import Player from './player.js';
 import Action from './net/action.js';
 import Page from './page.js';
 import Menu from './ui/Menu.js';
+import Clock from './ui/Clock.js';
 import AnimationManager from './animation/animationManager.js';
 import MoveAnimation from './animation/moveAnimation.js';
 
@@ -41,8 +42,14 @@ game.onMove = event => {
 game.onGameEnd = () => {
   page.setState("menu") 
 }
+const clock = new Clock({
+    setTimer(mouse){
+      clock.setTimeControl(mouse)
+    }
+});
 
-const p2p = new P2P(game);
+const p2p = new P2P(game, clock);
+
 const menu = new Menu({
 
     playOffline() {
@@ -53,6 +60,7 @@ const menu = new Menu({
     hostRoom(name) {
       p2p.host(name);
       game.setP2P(p2p)
+      clock.setP2P(p2p)
       game.setPlayerColors(game.me, ["white"])
       game.setPlayerColors(game.you, ["black"])
       game.handShake = false;
@@ -62,6 +70,7 @@ const menu = new Menu({
     joinRoom(name) {
       p2p.join(name)
       game.setP2P(p2p)
+      clock.setP2P(p2p)
       game.setPlayerColors(game.me, ["black"])
       game.setPlayerColors(game.you, ["white"])
       game.boardOrientation *= -1;
@@ -70,7 +79,7 @@ const menu = new Menu({
 
 });
 
-setupInput(canvas, mouse, menu, game, page);
+setupInput(canvas, mouse, menu, clock, game, page);
 loop();
 
 function loop() {
@@ -79,6 +88,8 @@ function loop() {
   animations.update(time);
   animations.draw(ctx);
   overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);
+  clock.update(performance.now())
+  drawClock(clock, overlayCtx);
   if (game.you.active){
     if (time % game.me.refreshTime === 0) p2p.send(new Action("hand", mouse));
     game.you.update();

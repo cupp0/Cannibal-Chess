@@ -1,8 +1,8 @@
 class P2P{
     
-  constructor(game, opponent){
+  constructor(game, clock){
     this.game = game;
-    this.opponent = opponent;
+    this.clock = clock;
   }
 
   host(roomName) {
@@ -66,6 +66,8 @@ class P2P{
           if (data.type === "hand")this.game.receiveHandUpdate(data.action)
           if (data.type === "drag")this.game.receiveDragUpdate(data.action)
           if (data.type === "handshake")this.game.receiveHandShake()
+          if (data.type === "clockSet")this.clock.receiveClockSet(data.action)
+          if (data.type === "clockButtonPress")this.clock.receiveClockButtonPress(data.action)
       });
 
       this.conn.on("close", () => {

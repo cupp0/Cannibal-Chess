@@ -1,12 +1,12 @@
-export default class Button {
-    constructor(name, x, y, w, h, onClick) {
-        this.name = name   
+export default class Switch {
+    constructor(name, color, x, y, w, h, clock) {
+        this.name = name  
+        this.color = color 
         this.x = x;
         this.y = y;
         this.w = w
         this.h = h; 
-        this.onClick = onClick;
-
+        this.clock = clock;
         this.hover = false;
     }
 
@@ -24,10 +24,10 @@ export default class Button {
     }
 
     onMouseDown(mouse) {
-        if (this.hover) this.onClick();
+        if (this.hover) this.clock.onTimePressed(this.color)
     }
 
-    onMouseUp(mouse) {    }
+    onMouseUp(mouse){}
 
     draw(ctx) {}
 
