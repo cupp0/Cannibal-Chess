@@ -12,7 +12,8 @@ import Clock from './ui/Clock.js';
 import AnimationManager from './animation/animationManager.js';
 import MoveAnimation from './animation/moveAnimation.js';
 import MenuAnimation from './animation/MenuAnimation.js';
-import {playTitleSound} from './audio.js'
+import MenuRingAnimation from './animation/MenuRingAnimation.js';
+import {playSound, pauseSound} from './audio.js'
 
 let time = 0;
 const bgCanvas = document.getElementById("background");
@@ -33,6 +34,13 @@ function setPageTo(state){
   page.setState(state) ;
 }
 
+function menuRing(freezeFrame){
+  setPageTo("menu")
+  animations.add(new MenuRingAnimation(freezeFrame, time)) 
+  pauseSound("title");
+  playSound("ring")
+}
+
 async function initBuffers(){
   await loadBuffers();
   setPageTo("awaitingClick")
@@ -41,8 +49,8 @@ async function initBuffers(){
 initBuffers();
 
 export function beginTitleSequence(){
-    animations.add(new MenuAnimation(menu, time, setPageTo))   
-    playTitleSound();
+    animations.add(new MenuAnimation(menu, time, menuRing))   
+    playSound("title");
 }
 
 game.onMove = event => {

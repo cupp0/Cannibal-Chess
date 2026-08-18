@@ -5,7 +5,7 @@ import Bishop from './pieces/Bishop.js';
 import Queen from './pieces/Queen.js';
 import King from './pieces/King.js';
 import Cannibal from './pieces/Cannibal.js';
-import { playMoveSound, playCaptureSound, playCannibalSound } from "./audio.js";
+import {playSound} from "./audio.js";
 import Move from './move.js';
 import Action from './net/action.js';
 import PieceDrag from './drag.js';
@@ -286,9 +286,9 @@ class Game {
   }
 
   playMoveAudio(t){
-    if (t === "normal" || t === "castling" || t === "promotion" || t === "enPassantable") playMoveSound();
-    if (t === "enPassant" || t === "capture")playCaptureSound();
-    if (t === "cannibal") playCannibalSound();
+    if (t === "normal" || t === "castling" || t === "promotion" || t === "enPassantable") playSound("move");
+    if (t === "enPassant" || t === "capture")playSound("capture");
+    if (t === "cannibal") playSound("cannibal");
   }
 
   // ~ ~ ~ ~ ~ LOGIC ~ ~ ~ ~ ~ //

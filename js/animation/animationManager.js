@@ -48,7 +48,7 @@ export default class AnimationManager {
             }
         }
         if (a instanceof MenuAnimation){
-            a.callback("menu");
+            a.callback(a.finalFrame);
         }
     }
 }

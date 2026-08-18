@@ -6,7 +6,7 @@ export default class MenuAnimation {
         this.menu = menu;
         this.startTime = startTime;
         this.callback = callback;
-        this.duration = 100;
+        this.duration = 80;
         this.titleSplash = getBuffer("titlesplash");
         this.mask = this.createEmptyBuffer(this.titleSplash);
         this.transMask = this.createEmptyBuffer(this.titleSplash);
@@ -32,7 +32,7 @@ export default class MenuAnimation {
 
         this.forEachPixel(this.transMask, (x, y) => {
             if (this.transMask[y][x] > 0) {
-                this.transMask[y][x] -= .05;
+                this.transMask[y][x] -= .01;
             }
             if (this.temp[y][x] === 1){
                 this.mask[y][x] = 1;
@@ -48,9 +48,10 @@ export default class MenuAnimation {
             newb[y] = []
             for (let x = 0; x < buffer[y].length; x++) {
                 newb[y][x] = []
-                const potentialCoords = {x: x+(amount[y][x]*mult), y: y+(amount[y][x]*mult)}
-                const inBounds = this.inBounds(potentialCoords, buffer) ? 1 : 0;
+                const potentialCoords = {x: x+(Math.round(amount[y][x]*mult)), y: y+(Math.round(amount[y][x]*mult))}
+                const inBounds = this.inBounds(potentialCoords, buffer);
                 const trans = inBounds ? potentialCoords : {x:x, y:y}
+
                 for (let z = 0; z < buffer[y][x].length; z++){
                     newb[y][x][z] = buffer[trans.y][trans.x][z]
                 }
@@ -120,12 +121,12 @@ export default class MenuAnimation {
 
     draw(ctx){
         for (let i = 0; i < 5; i++)this.dilateMasks();
-        const c = this.maskBuffer(this.titleSplash, this.mask);
-        const t = this.translate(c, this.transMask, 10)
-        const f = this.addColor(t, this.transMask, 100)
-        renderBuffer(ctx, f, 21, 88);
+        const t = this.translate(this.titleSplash, this.transMask, 25)
+        const c = this.maskBuffer(t, this.mask);
+        renderBuffer(ctx, c, 21, 88);
+        if (this.currentTime - this.startTime + 1 === this.duration) this.finalFrame = c
     }
-
+ 
     maskBuffer(b, m){
         const newb = [];
         for (let y = 0; y < b.length; y++) {

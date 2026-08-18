@@ -1,24 +1,17 @@
-let moveSound = new Audio("assets/sound/synthMove.wav");
-let captureSound = new Audio("assets/sound/synthCapture.wav");
-let cannibalSound = new Audio("assets/sound/synthCannibal.wav");
-let titleSound = new Audio("assets/sound/titleSound.wav");
+const sounds = new Map();
 
-export function playMoveSound() {
-  moveSound.currentTime = 0;
-  moveSound.play();
+sounds.set("move", new Audio("assets/sound/synthMove.wav"))
+sounds.set("capture", new Audio("assets/sound/synthCapture.wav"));
+sounds.set("cannibal", new Audio("assets/sound/synthCannibal.wav"));
+sounds.set("title", new Audio("assets/sound/titleSound.wav"));
+sounds.set("ring", new Audio("assets/sound/ring.wav"));
+
+export function playSound(sound){
+  sounds.get(sound).currentTime = 0;
+  sounds.get(sound).play()
 }
 
-export function playCaptureSound() {
-  captureSound.currentTime = 0;
-  captureSound.play();
-}
-
-export function playCannibalSound(){
-  cannibalSound.currentTime = 0;
-  cannibalSound.play();
-}
-
-export function playTitleSound(){
-  titleSound.currentTime = 0;
-  titleSound.play();
+export function pauseSound(sound){
+  sounds.get(sound).pause();
+  sounds.get(sound).currentTime = 0;
 }
