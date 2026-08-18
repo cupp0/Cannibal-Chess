@@ -48,7 +48,6 @@ export default class Menu {
     }
 
     onMouseDown(mouse) {
-
         for (const widget of this.widgets)
             widget.onMouseDown(mouse);
     }

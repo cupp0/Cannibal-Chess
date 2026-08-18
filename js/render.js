@@ -1,8 +1,25 @@
-
 const TILE = 32;
 const MOVEDOT = 8;
 const assetBuffers = new Map()
+const spriteNames = [
+  "white-k",
+  "black-k",
+  "playoffline",
+  "host",
+  "join",
+  "titlesplash",
+  "hand",
+  "closedHand",
+  "handShake",
+  "clockBody",
+  "clockButtonUp",
+  "clockButtonDown",
+  "clockTimerKnob"
+];
+
+addPieceSpriteNames();
 const flippers = ["hand", "closedHand", "clockBody", "clockButtonUp", "clockButtonDown", "clockTimerKnob"]
+let menuStartTime = 0;
 
 function forEachSquare(callback) {
   for (let x = 0; x < 8; x++) {
@@ -20,8 +37,7 @@ function forEachPixel(buffer, callback) {
     }
 }
 
-initBuffers();
-function initBuffers(){
+function addPieceSpriteNames(){
     const pieceOrder = ['b', 'n', 'p', 'q', 'r']    
     for (const i of generateCombinations(5)){
         let pieceComb = "";
@@ -31,60 +47,43 @@ function initBuffers(){
 
         const wName = "white-"+pieceComb
         const bName = "black-"+pieceComb
-        addBuffer(wName);
-        addBuffer(bName);
+        spriteNames.push(wName);
+        spriteNames.push(bName);
     }
-    addBuffer("white-k");
-    addBuffer("black-k");
-    addBuffer("playoffline");
-    addBuffer("host");
-    addBuffer("join");
-    addBuffer("titlesplash");
-    addBuffer("hand");
-    addBuffer("closedHand");
-    addBuffer("handShake");
-    addBuffer("clockBody");
-    addBuffer("clockButtonUp");
-    addBuffer("clockButtonDown");
-    addBuffer("clockTimerKnob");
 }
 
-function addBuffer(name){
+export async function loadBuffers(){
+    for (const name of spriteNames) {
+      const buffer = await addBuffer(name);
+      assetBuffers.set(name, buffer)
+    }
+}
+
+async function addBuffer(name){
     const img = new Image();
-    //pngy pngy bo bngy banana fana fo fngy
     img.src = "./assets/sprites/"+name+".png"
-    img.onload = function(){
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = img.width;
-        tempCanvas.height = img.height;
-        const tempCtx = tempCanvas.getContext("2d");
-        tempCtx.drawImage(img, 0, 0);
-        const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
-        const pixels = imageData.data;
-        const buffer = []
-        for (let y = 0; y < img.height; y++) {
-            buffer[y] = []
-            for (let x = 0; x < img.width; x++) {
-            const i = ((y * img.width + x) * 4);
-            let r = pixels[i];
-            let g = pixels[i + 1];
-            let b = pixels[i + 2];
-            let a = pixels[i + 3] / 255; // normalize alpha 0-1
-            buffer[y][x] = [r, g, b, a];
-            }
+
+    await img.decode();
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = img.width;
+    tempCanvas.height = img.height;
+    const tempCtx = tempCanvas.getContext("2d");
+    tempCtx.drawImage(img, 0, 0);
+    const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+    const pixels = imageData.data;
+    const buffer = []
+    for (let y = 0; y < img.height; y++) {
+        buffer[y] = []
+        for (let x = 0; x < img.width; x++) {
+        const i = ((y * img.width + x) * 4);
+        let r = pixels[i];
+        let g = pixels[i + 1];
+        let b = pixels[i + 2];
+        let a = pixels[i + 3] / 255; // normalize alpha 0-1
+        buffer[y][x] = [r, g, b, a];
         }
-        assetBuffers.set(String(name), buffer)
-        
-        if (flippers.includes(name)){
-          assetBuffers.set(
-              "flipped"+name.charAt(0).toUpperCase() + name.slice(1),
-              flipBuffer(assetBuffers.get(name), true, true))
-        }
-        
-        if (name === "handShake"){
-          assetBuffers.set("flippedHandShake", flipBuffer(assetBuffers.get("handShake"), false, true))
-        }
-    } 
+    }
+    return buffer;
 }
 
 export function getBuffer(name){
@@ -105,14 +104,6 @@ function generateCombinations(n) {
     }
     backtrack(0, []);
     return result;
-}
-  
-export function drawBackground(ctx){
-    const r = Math.random()*255;
-    const g = Math.random()*255;
-    const b = Math.random()*255;
-    ctx.fillStyle = 'rgba(62, 80, 48, 255)'
-    ctx.fillRect(-5000, -5000, 10000, 10000);
 }
 
 export function drawBoard(ctx) {
@@ -241,7 +232,7 @@ function drawArm(ctx, p, o){
 
 
   ctx.strokeStyle = 'black'; 
-  ctx.lineWidth = 1;          
+  ctx.lineWidth = 1.1;          
   ctx.beginPath();           
   ctx.moveTo(leftOfWrist.x, leftOfWrist.y);          
   ctx.lineTo(leftOfWrist.x, 500*o); 
@@ -307,7 +298,7 @@ export function renderBuffer(ctx, b, xPos, yPos){
     if(!b)return;
     forEachPixel(b, (x, y) =>{
         ctx.fillStyle = `rgba(${b[y][x][0]},${b[y][x][1]},${b[y][x][2]},${b[y][x][3]})`;
-        ctx.fillRect(finalPos.x + x , finalPos.y + y, 1.05, 1.05);
+        ctx.fillRect(finalPos.x + x , finalPos.y + y, 1.1, 1.1);
     })
 }
 
@@ -349,17 +340,27 @@ export function drawMoveDots(ctx, game) {
     }
 }
 
-export function drawMenu(ctx, menu) {
-    renderBuffer(ctx, assetBuffers.get("titlesplash"), 21, 88);
+export function menuAssetsLoaded(menu){
+  if (!assetBuffers.get("titlesplash")) return false;
+  if (!assetBuffers.get("host")) return false;
+  if (!assetBuffers.get("join")) return false;
+  if (!assetBuffers.get("playoffline")) return false;
+  return true;
+}
 
-    for (const widget of menu.widgets){
-      const buffer = assetBuffers.get(widget.name);
-      if (buffer){
-          renderBuffer(ctx, buffer, widget.x, widget.y);
-      } else {
-          widget.draw(ctx);
+export function drawMenu(ctx, menu) {
+
+      renderBuffer(ctx, assetBuffers.get("titlesplash"), 21, 88);
+
+      for (const widget of menu.widgets){
+        const buffer = assetBuffers.get(widget.name);
+        if (buffer){
+            renderBuffer(ctx, buffer, widget.x, widget.y);
+        } else {
+            widget.draw(ctx);
+        }
       }
-    }
+
 }
 
 //get board position from display

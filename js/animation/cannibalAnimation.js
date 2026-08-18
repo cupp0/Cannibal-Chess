@@ -49,8 +49,8 @@ export default class CannibalAnimation {
 
     update(t) {
         this.currentTime = t;
-        if (this.currentTime - this.startTime >= this.duration)
-            this.finished = true;
+        if ((this.currentTime - this.startTime)%3 === 2)this.updateMorph();
+        if (this.currentTime - this.startTime >= this.duration) this.finished = true;
     }
 
     establishMorphBounds(){
@@ -164,7 +164,6 @@ export default class CannibalAnimation {
     }
 
     draw(ctx) {
-        if ((this.currentTime - this.startTime)%3 === 2)this.updateMorph();
         renderBuffer(ctx, this.morphBuffer, this.x * 32, this.y * 32)
     }
 

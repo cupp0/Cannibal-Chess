@@ -1,4 +1,6 @@
-export function setupInput(canvas, mouse, menu, clock, game, page, background){
+import {beginTitleSequence} from './main.js'
+
+export function setupInput(mouse, menu, clock, game, page){
 
     window.addEventListener("mousemove", e =>{
         mouse.updateScreenCoords({x:e.clientX, y:e.clientY})
@@ -33,4 +35,8 @@ export function setupInput(canvas, mouse, menu, clock, game, page, background){
             case "game" : game.onKeyDown(e); break;
         }      
     });
+
+    window.addEventListener("pointerdown", () => {
+        if (page.state === "awaitingClick") beginTitleSequence();
+    })
 }

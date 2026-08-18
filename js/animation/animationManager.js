@@ -1,8 +1,8 @@
 import MoveAnimation from './moveAnimation.js';
 import CannibalAnimation from './cannibalAnimation.js';
 import CaptureAnimation from './captureAnimation.js';
+import MenuAnimation from './MenuAnimation.js';
 import Move from '../move.js';
-
 
 export default class AnimationManager {
 
@@ -12,6 +12,7 @@ export default class AnimationManager {
 
     isSquareAnimated(x, y, orientation){
         for (const a of this.animations){
+            if (!a.move) continue;
             if (a.move.from.x === x && a.move.from.y === y) return true;
             if (a.move.to.x === x && a.move.to.y === y) return true;
         }
@@ -45,6 +46,9 @@ export default class AnimationManager {
             if (a.move.type === "capture"){
                 this.add(new CaptureAnimation(a.currentTime, a.move, a.orientation))
             }
+        }
+        if (a instanceof MenuAnimation){
+            a.callback("menu");
         }
     }
 }
