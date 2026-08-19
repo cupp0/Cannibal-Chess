@@ -3,13 +3,16 @@ import Slider from "./Slider.js";
 import Action from '../net/action.js';
 
 export default class Clock{
-    constructor(callbacks){
+    constructor(){
         this.pos = {x:264, y:83}
         this.currentTime = 0;
         this.whiteTime = 0;
         this.blackTime = 0;
         this.activeColor = "none";
         this.p2p = null;
+    }
+
+    initUI(){
         this.widgets = [
         
         new Switch(
@@ -18,8 +21,7 @@ export default class Clock{
             this.pos.x + 42, 
             this.pos.y + 13,
             9,
-            17,
-            this
+            17
         ),
 
         new Switch(
@@ -28,8 +30,7 @@ export default class Clock{
             this.pos.x + 42, 
             this.pos.y + 60,
             9,
-            17,
-            this
+            17
         ),
 
         new Slider(
@@ -37,10 +38,15 @@ export default class Clock{
             this.pos.x + 4, 
             this.pos.y + 40,
             4,
-            10,
-            callbacks.setTimer
+            10
         ),
         ]
+
+        this.widgets[0].setCallback(this.onTimePressed.bind(this));
+        this.widgets[1].setCallback(this.onTimePressed.bind(this));
+        this.widgets[2].setCallback(this.setTimeControl.bind(this));
+
+        this.slider = this.widgets[2]
     }
 
     setP2P(p2p){
@@ -100,14 +106,10 @@ export default class Clock{
     }
 
     setTimeControl(mouse){
-        for (const widget of this.widgets){
-            if (widget.name === "clockTimerKnob"){
-                widget.x = Math.min(Math.max(mouse.world.x-3, 268), 310);
-                this.timeControl = this.map(widget.x, 268, 310, 60000, 600000)
-                this.blackTime = this.timeControl
-                this.whiteTime = this.timeControl
-            }
-        }
+        this.slider.x = Math.min(Math.max(mouse.world.x-3, 268), 310);
+        this.timeControl = this.map(this.slider.x, 268, 310, 60000, 600000)
+        this.blackTime = this.timeControl
+        this.whiteTime = this.timeControl
         this.activeColor = "none";
         if (!this.p2p) return;
         this.p2p.send(new Action("clockSet", 

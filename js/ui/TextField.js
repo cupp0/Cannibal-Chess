@@ -54,7 +54,8 @@ export default class TextField {
         ctx.fillStyle = "rgba(51, 41, 47, 255)"
         ctx.fillRect(this.x, this.y, this.w, this.h);
 
-        ctx.strokeStyle = this.focused ? "rgba(160, 160, 160, 255)" : "black";
+        ctx.strokeStyle = this.hover ? "white" : "black";
+        if (this.focused) ctx.strokeStyle = 'rgba(160, 160, 160, 255)';
         ctx.strokeRect(this.x, this.y, this.w, this.h);
 
         ctx.font = '8px "RetroFont"';

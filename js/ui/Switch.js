@@ -1,13 +1,16 @@
 export default class Switch {
-    constructor(name, color, x, y, w, h, clock) {
+    constructor(name, color, x, y, w, h) {
         this.name = name  
         this.color = color 
         this.x = x;
         this.y = y;
         this.w = w
         this.h = h; 
-        this.clock = clock;
         this.hover = false;
+    }
+
+    setCallback(cb){
+        this.onClick = cb
     }
 
     contains(mx, my) {
@@ -24,7 +27,7 @@ export default class Switch {
     }
 
     onMouseDown(mouse) {
-        if (this.hover) this.clock.onTimePressed(this.color)
+        if (this.hover) this.onClick(this.color)
     }
 
     onMouseUp(mouse){}

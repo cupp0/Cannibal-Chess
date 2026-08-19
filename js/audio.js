@@ -11,7 +11,27 @@ export function playSound(sound){
   sounds.get(sound).play()
 }
 
-export function pauseSound(sound){
-  sounds.get(sound).pause();
-  sounds.get(sound).currentTime = 0;
+export function pauseSound(sound) {
+    const audio = sounds.get(sound)
+    const originalVolume = audio.volume;
+    const duration = 500;
+    const startTime = performance.now();
+
+    function fade() {
+        const progress = Math.min(
+            (performance.now() - startTime) / duration,
+            1
+        );
+
+        audio.volume = originalVolume * (1 - progress);
+
+        if (progress < 1) {
+            requestAnimationFrame(fade);
+        } else {
+            audio.pause();
+            audio.volume = originalVolume;
+        }
+    }
+
+    fade();
 }

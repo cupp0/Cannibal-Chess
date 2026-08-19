@@ -1,17 +1,17 @@
 export default class Slider {
-    constructor(name, x, y, w, h, onDrag) {
+    constructor(name, x, y, w, h) {
         this.name = name   
         this.x = x;
         this.y = y;
         this.w = w
         this.h = h; 
 
-        //calculate this from display
-        //this.bottomPos = {}
-        //this.topPos = {}
-        this.onDrag = onDrag;
         this.held = false;
         this.hover = false;
+    }
+
+    setCallback(cb){
+        this.onDrag = cb
     }
 
     contains(mx, my) {

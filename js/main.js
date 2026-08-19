@@ -27,54 +27,10 @@ const display = new Display(canvas, ctx, bgCanvas, bgCtx, overlay, overlayCtx);
 const mouse = new Mouse(display);
 const page = new Page("pageLoad")
 const startingPosition = "r,n,b,q,k,b,n,r/p,p,p,p,p,p,p,p/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/P,P,P,P,P,P,P,P/R,N,B,Q,K,B,N,R white KQkq -"
-const game = new Game("main", startingPosition, new Player(0, 0, true), new Player(0, 0, false));
 const animations = new AnimationManager();
-
-function setPageTo(state){
-  page.setState(state) ;
-}
-
-function menuRing(freezeFrame){
-  setPageTo("menu")
-  animations.add(new MenuRingAnimation(freezeFrame, time)) 
-  pauseSound("title");
-  playSound("ring")
-}
-
-async function initBuffers(){
-  await loadBuffers();
-  setPageTo("awaitingClick")
-}
-
-initBuffers();
-
-export function beginTitleSequence(){
-    animations.add(new MenuAnimation(menu, time, menuRing))   
-    playSound("title");
-}
-
-game.onMove = event => {
-    animations.add(
-        new MoveAnimation(
-            time, 
-            event.theMove,
-            game.currentDrag,
-            game.boardOrientation
-        )
-    );
-};
-
-game.onGameEnd = () => {
-  page.setState("menu") 
-}
-const clock = new Clock({
-    setTimer(mouse){
-      clock.setTimeControl(mouse)
-    }
-});
-
+const game = new Game("main", startingPosition, new Player(0, 0, true), new Player(0, 0, false), animations, time);
+const clock = new Clock(); clock.initUI(); 
 const p2p = new P2P(game, clock);
-
 const menu = new Menu({
 
     playOffline() {
@@ -104,10 +60,22 @@ const menu = new Menu({
 
 });
 
+initBuffers();
 setupInput(mouse, menu, clock, game, page);
-loop();
 
+const targetFps = 20; 
+const frameInterval = 1000 / targetFps; 
+let lastFrameTime = 0;
+
+loop();
 function loop() {
+
+    requestAnimationFrame(loop);
+
+    //limit fps
+    const elapsed = performance.now() - lastFrameTime;
+    if (elapsed < frameInterval) return;
+    lastFrameTime = performance.now() - (elapsed % frameInterval);
 
   if (game.you.active){
     if (time % game.me.refreshTime === 0) p2p.send(new Action("hand", mouse));
@@ -136,5 +104,21 @@ function loop() {
   animations.update(time);
   animations.draw(ctx);
   
-  requestAnimationFrame(loop);
+}
+
+function menuRing(freezeFrame){
+  page.setState("menu")
+  animations.add(new MenuRingAnimation(freezeFrame, time)) 
+  pauseSound("title");
+  playSound("ring")
+}
+
+async function initBuffers(){
+  await loadBuffers();
+  page.setState("awaitingClick")
+}
+
+export function beginTitleSequence(){
+    animations.add(new MenuAnimation(menu, time, menuRing))   
+    playSound("title");
 }

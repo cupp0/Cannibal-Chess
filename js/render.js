@@ -355,7 +355,8 @@ export function drawMenu(ctx, menu) {
       for (const widget of menu.widgets){
         const buffer = assetBuffers.get(widget.name);
         if (buffer){
-            renderBuffer(ctx, buffer, widget.x, widget.y);
+            const b = highlightBuffer(buffer, widget.hover? 255 : 0, "gray")
+            renderBuffer(ctx, b, widget.x, widget.y);
         } else {
             widget.draw(ctx);
         }

@@ -9,13 +9,14 @@ import {playSound} from "./audio.js";
 import Move from './move.js';
 import Action from './net/action.js';
 import PieceDrag from './drag.js';
-
+import MoveAnimation from './animation/moveAnimation.js';
 
 class Game {
-  constructor(id, cFen, me, you){
+  constructor(id, cFen, me, you, anim, time){
     this.id = id,
     this.me = me,
     this.you = you,
+    this.time = time,
     this.boardOrientation = 1,
     this.selected = null,
     this.hovered = null,
@@ -26,6 +27,20 @@ class Game {
     this.setPlayerColors(this.me, ["black", "white"]);
     this.loadCFen(cFen);
     this.storePosition(cFen);
+    this.initAnimStuff(anim)
+  }
+
+  initAnimStuff(animations){
+    this.onMove = event => {
+      animations.add(
+          new MoveAnimation(
+              this.time, 
+              event.theMove,
+              this.currentDrag,
+              this.boardOrientation
+          )
+      );
+    };
   }
 
   forEachSquare(callback) {
