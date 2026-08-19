@@ -106,7 +106,7 @@ function generateCombinations(n) {
     return result;
 }
 
-export function drawBoard(ctx) {
+function drawBoard(ctx) {
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 8; x++) {
         ctx.fillStyle = (x + y) % 2 === 0 ? 
@@ -132,7 +132,7 @@ export function drawBoard(ctx) {
 }
 
 //pass animations so we know which squares to not render during animation
-export function drawPieces(ctx, game, animations, mouse){
+function drawPieces(ctx, game, animations, mouse){
   forEachSquare((x, y) => {
       if (!game.board[y][x]) return;
       if (animations.isSquareAnimated(x, y, game.boardOrientation)) return;
@@ -191,7 +191,7 @@ function highlightBuffer(buffer, amount, type){
   return newBuffer
 }
 
-export function drawPlayers(ctx, game, mouse){
+function drawPlayers(ctx, game, mouse){
 
   if (game.activeHandShake){
       const handshakeBuffer = assetBuffers.get("flippedHandShake");
@@ -306,7 +306,7 @@ export function renderMessage(msg){
   //render box then text
 }
 
-export function drawMoveDots(ctx, game) {
+function drawMoveDots(ctx, game) {
     
     for (const m of game.validMoves) {
       switch(m.type){
@@ -364,8 +364,16 @@ export function drawMenu(ctx, menu) {
 
 }
 
-//get board position from display
-export function drawClock(clock, ctx) {
+export function drawGame(ctx, overlayCtx, game, animations, mouse, display, overlay, clock){
+  overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);    
+  drawClock(clock, overlayCtx);
+  drawBoard(ctx);
+  drawPieces(ctx, game, animations, mouse);
+  drawMoveDots(ctx, game);
+  drawPlayers(overlayCtx, game, mouse);
+}
+
+function drawClock(clock, ctx) {
     renderBuffer(ctx, assetBuffers.get("clockBody"), clock.pos.x, clock.pos.y);
     for (const widget of clock.widgets){
         const buffer = assetBuffers.get(widget.name);

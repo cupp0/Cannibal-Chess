@@ -1,16 +1,14 @@
 import Game from './game.js';
 import P2P from './net/p2p.js';
-import {loadBuffers, drawBoard, drawPieces, drawMoveDots, drawPlayers, drawMenu, drawClock, menuAssetsLoaded } from './render.js';
+import {loadBuffers, drawGame, drawMenu} from './render.js';
 import {setupInput} from './input.js';
 import Display from './display.js';
 import Mouse from './mouse.js';
 import Player from './player.js';
-import Action from './net/action.js';
 import Page from './page.js';
 import Menu from './ui/Menu.js';
 import Clock from './ui/Clock.js';
 import AnimationManager from './animation/animationManager.js';
-import MoveAnimation from './animation/moveAnimation.js';
 import MenuAnimation from './animation/MenuAnimation.js';
 import MenuRingAnimation from './animation/MenuRingAnimation.js';
 import {playSound, pauseSound} from './audio.js'
@@ -31,34 +29,7 @@ const animations = new AnimationManager();
 const game = new Game("main", startingPosition, new Player(0, 0, true), new Player(0, 0, false), animations, time);
 const clock = new Clock(); clock.initUI(); 
 const p2p = new P2P(game, clock);
-const menu = new Menu({
-
-    playOffline() {
-      console.log("play offline")
-      page.setState("game");
-    },
-
-    hostRoom(name) {
-      p2p.host(name);
-      game.setP2P(p2p)
-      clock.setP2P(p2p)
-      game.setPlayerColors(game.me, ["white"])
-      game.setPlayerColors(game.you, ["black"])
-      game.handShake = false;
-      page.setState("game");
-    },
-
-    joinRoom(name) {
-      p2p.join(name)
-      game.setP2P(p2p)
-      clock.setP2P(p2p)
-      game.setPlayerColors(game.me, ["black"])
-      game.setPlayerColors(game.you, ["white"])
-      game.boardOrientation *= -1;
-      page.setState("game");
-    }
-
-});
+const menu = new Menu(p2p, game, clock, page); menu.initUI();
 
 initBuffers();
 setupInput(mouse, menu, clock, game, page);
@@ -73,37 +44,27 @@ function loop() {
     requestAnimationFrame(loop);
 
     //limit fps
+    clock.update(performance.now())
     const elapsed = performance.now() - lastFrameTime;
     if (elapsed < frameInterval) return;
     lastFrameTime = performance.now() - (elapsed % frameInterval);
 
-  if (game.you.active){
-    if (time % game.me.refreshTime === 0) p2p.send(new Action("hand", mouse));
-    game.you.update();
-    game.me.updateLocal(mouse);
-    game.checkForHandShake();
-  }
+    //send cursor position to peer
+    if (game.you.active)game.updatePeer(mouse)
   
-  switch(page.state){
-    case "menu":
-      drawMenu(ctx, menu);
-      break;
-    case "game":
-      
-      overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);
-      clock.update(performance.now())
-      drawClock(clock, overlayCtx);
-      drawBoard(ctx);
-      drawPieces(ctx, game, animations, mouse);
-      drawMoveDots(ctx, game);
-      drawPlayers(overlayCtx, game, mouse);
-      break;
-  }
+    //render
+    switch(page.state){
+      case "menu":
+        drawMenu(ctx, menu);
+        break;
+      case "game":
+        drawGame(ctx, overlayCtx, game, animations, mouse, display, overlay, clock)
+        break;
+    }
 
-  time++;
   animations.update(time);
   animations.draw(ctx);
-  
+  time++;
 }
 
 function menuRing(freezeFrame){

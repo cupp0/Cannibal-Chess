@@ -1,13 +1,15 @@
 export default class Button {
-    constructor(name, x, y, w, h, onClick) {
+    constructor(name, x, y, w, h) {
         this.name = name   
         this.x = x;
         this.y = y;
         this.w = w
         this.h = h; 
-        this.onClick = onClick;
-
         this.hover = false;
+    }
+
+    setCallback(cb){
+        this.onClick = cb
     }
 
     contains(mx, my) {

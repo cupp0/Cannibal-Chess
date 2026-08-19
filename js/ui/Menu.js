@@ -2,11 +2,14 @@ import Button from "./Button.js";
 import TextField from "./TextField.js";
 export default class Menu {
 
-    constructor(callbacks) {
+    constructor(p2p, game, clock, page) {
+        this.p2p = p2p
+        this.game = game
+        this.clock = clock
+        this.page = page
+    }
 
-        this.hostField = new TextField(80, 136, 86, 11);
-        this.joinField = new TextField(80, 150, 86, 11);
-
+    initUI(){
         this.widgets = [
 
             new Button(
@@ -15,11 +18,7 @@ export default class Menu {
                 118,
                 100,
                 12,
-                callbacks.playOffline
             ),
-
-            this.hostField,
-            this.joinField,
 
             new Button(
                 "host",
@@ -27,7 +26,6 @@ export default class Menu {
                 135,
                 37,
                 12,
-                () => callbacks.hostRoom(this.hostField.text)
             ),
 
             new Button(
@@ -36,9 +34,41 @@ export default class Menu {
                 149,
                 36,
                 12,
-                () => callbacks.joinRoom(this.joinField.text)
-            )
+            ),
+            new TextField(80, 136, 86, 11),
+            new TextField(80, 150, 86, 11)
         ];
+
+        this.widgets[0].setCallback(this.playOffline.bind(this))
+        this.widgets[1].setCallback(this.host.bind(this))
+        this.widgets[2].setCallback(this.join.bind(this))
+  
+        this.hostField = this.widgets[3]
+        this.joinField = this.widgets[4]   
+    } 
+
+    playOffline(){
+        this.page.setState("game")
+    }
+
+    host(roomName){
+        this.p2p.host(roomName);
+        this.game.setP2P(this.p2p)
+        this.clock.setP2P(this.p2p)
+        this.game.setPlayerColors(this.game.me, ["white"])
+        this.game.setPlayerColors(this.game.you, ["black"])
+        this.game.handShake = false;
+        this.page.setState("game");
+    }
+
+    join(roomName){
+        this.p2p.join(roomName)
+        this.game.setP2P(p2p)
+        this.clock.setP2P(p2p)
+        this.game.setPlayerColors(this.game.me, ["black"])
+        this.game.setPlayerColors(this.game.you, ["white"])
+        this.game.boardOrientation *= -1;
+        this.page.setState("game");
     }
 
     onMouseMove(mouse) {
