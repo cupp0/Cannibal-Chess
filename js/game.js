@@ -321,6 +321,7 @@ class Game {
   }
 
   executeLiveMove(theMove, isLocalSource){
+    console.log(theMove)
     this.executeMove(theMove)
     this.playMoveAudio(theMove.type);
     this.storePosition(this.getCFen());
@@ -361,8 +362,7 @@ class Game {
     //some moves do extra stuff
     switch (move.type){
       case "cannibal" : 
-      const list = move.piece.getPieces().concat(move.target.getPieces())
-      this.setPiece(move.to, this.createCannibal(list));
+      this.executeCannibalMove(move);
       break;
 
       case "castling" :
@@ -371,6 +371,10 @@ class Game {
 
       case "enPassant" :
       this.executeEnPassant(move);  
+      break;
+
+      case "promotion":
+      this.executePromotion(move);
       break;
 
     }  
@@ -398,6 +402,11 @@ class Game {
 
   }
 
+  executeCannibalMove(move){
+    const list = move.piece.getPieces().concat(move.target.getPieces())
+    this.setPiece(move.to, this.createCannibal(list));
+  }
+
   executeEnPassant(move){
     if (move.to.y === 2) {this.setPiece({x: move.to.x, y: 3}, null);}
     else this.setPiece({x: move.to.x, y: 4}, null);
@@ -407,6 +416,22 @@ class Game {
     const rookCoords = move.to.x > move.from.x ? {x: 7, y: move.from.y} : {x: 0, y: move.from.y}
     const newCoords = rookCoords.x === 7 ? {x: 5, y: rookCoords.y} : {x: 3, y: rookCoords.y}
     this.relocatePiece(rookCoords, newCoords)
+  }
+
+  executePromotion(move){
+    //regular promotion
+    if (move.piece instanceof Pawn){
+      const newPiece = this.createPiece(move.piece.color === "black" ? "q" : "Q")
+      this.setPiece(move.to, newPiece)
+    } 
+    
+    //cannibal promotion
+    else {
+      const pawn = move.piece.color === "black" ? "p" : "P"
+      const queen = move.piece.color === "black" ? "q" : "Q"
+      const label = move.piece.label.replace(pawn, queen)
+      this.setPiece(move.to, this.createPiece(label))
+    }
   }
 
   checkForMate(whoMoved){
@@ -591,10 +616,11 @@ class Game {
     if (Math.abs(to.x-from.x) === 1 && to.y-from.y === piece.dir){
       if (this.epTarget && this.squareEquals(this.epTarget, to)) return "enPassant"
       if (!target) return false;
-      return this.validateNormalMove(from, to);
     }
 
     if (Math.abs(to.y-from.y) === 2) return "enPassantable"
+
+    if (to.y === 7 || to.y === 0) return "promotion"
 
     return this.validateNormalMove(from, to);
   }
@@ -643,11 +669,25 @@ class Game {
     if (move){
       switch (move.type){
         case "enPassant": return false;
-        case "promotion": return false;
       }
     } else return false;
 
+    if (move && this.isCannibalPromoting(this.getPiece(from), move.to)){
+      return "promotion"
+    }
+
     return this.validateNormalMove(from, to);
+  }
+
+  isCannibalPromoting(piece, to){
+
+    const isPromotionSquare = 
+    (to.y === 7 && piece.color === "black") ||
+    (to.y === 0 && piece.color === "white");
+
+    const cannibalContainsPawn = piece.getPieces().some(p => p instanceof Pawn);
+    
+    return (isPromotionSquare && cannibalContainsPawn)
   }
 
   //default move type assignment
