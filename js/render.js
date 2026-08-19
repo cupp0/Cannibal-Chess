@@ -52,7 +52,12 @@ function addPieceSpriteNames(){
     }
 }
 
-export async function loadBuffers(){
+export async function initBuffers(page){
+  await loadBuffers();
+  page.setState("awaitingClick")
+}
+
+async function loadBuffers(){
     for (const name of spriteNames) {
       const buffer = await addBuffer(name);
       assetBuffers.set(name, buffer)
@@ -368,8 +373,8 @@ export function drawGame(ctx, overlayCtx, game, animations, mouse, display, over
   overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);    
   drawClock(clock, overlayCtx);
   drawBoard(ctx);
-  drawPieces(ctx, game, animations, mouse);
   drawMoveDots(ctx, game);
+  drawPieces(ctx, game, animations, mouse);
   drawPlayers(overlayCtx, game, mouse);
 }
 

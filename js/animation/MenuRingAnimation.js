@@ -1,10 +1,10 @@
 import {getBuffer, renderBuffer} from '../render.js';
 
-export default class MenuAnimation {
+export default class MenuRingAnimation {
 
     constructor(buffer, startTime) {
         this.buffer = buffer;
-        this.titleSplash = getBuffer("titleSplash")
+        this.titleSplash = getBuffer("titlesplash")
         this.mask = this.generateMask(this.buffer);
         this.seedColors();
         this.startTime = startTime;
@@ -22,6 +22,9 @@ export default class MenuAnimation {
             newb[y] = []
             for (let x = 0; x < b[y].length; x++) {
                 newb[y][x] = b[y][x][0] === 0 ? 1 : 0;
+                if (this.titleSplash[y][x][0] > 200 && x < 122 && y < 20){
+                    newb[y][x] = Math.abs(newb[y][x] - 1)
+                }
             }
         }
         return newb;

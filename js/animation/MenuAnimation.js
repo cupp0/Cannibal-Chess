@@ -2,10 +2,9 @@ import {getBuffer, renderBuffer} from '../render.js';
 
 export default class MenuAnimation {
 
-    constructor(menu, startTime, callback) {
+    constructor(menu, startTime) {
         this.menu = menu;
         this.startTime = startTime;
-        this.callback = callback;
         this.duration = 80;
         this.titleSplash = getBuffer("titlesplash");
         this.mask = this.createEmptyBuffer(this.titleSplash);

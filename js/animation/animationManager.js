@@ -2,11 +2,14 @@ import MoveAnimation from './moveAnimation.js';
 import CannibalAnimation from './cannibalAnimation.js';
 import CaptureAnimation from './captureAnimation.js';
 import MenuAnimation from './MenuAnimation.js';
-import Move from '../move.js';
+import MenuRingAnimation from './MenuRingAnimation.js';
+import {playSound, pauseSound} from '../audio.js'
+import {getTime} from '../main.js'
 
 export default class AnimationManager {
 
-    constructor() {
+    constructor(page) {
+        this.page = page
         this.animations = [];
     }
 
@@ -48,7 +51,14 @@ export default class AnimationManager {
             }
         }
         if (a instanceof MenuAnimation){
-            a.callback(a.finalFrame);
+            this.ringAnimation(a.finalFrame);
         }
+    }
+   
+    ringAnimation(freezeFrame){
+        this.page.setState("menu")
+        this.add(new MenuRingAnimation(freezeFrame, getTime())) 
+        pauseSound("title");
+        playSound("ring")
     }
 }

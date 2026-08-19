@@ -10,13 +10,13 @@ import Move from './move.js';
 import Action from './net/action.js';
 import PieceDrag from './drag.js';
 import MoveAnimation from './animation/moveAnimation.js';
+import {getTime} from './main.js'
 
 class Game {
-  constructor(id, cFen, me, you, anim, time){
+  constructor(id, cFen, me, you, anim){
     this.id = id,
     this.me = me,
     this.you = you,
-    this.time = time,
     this.boardOrientation = 1,
     this.selected = null,
     this.hovered = null,
@@ -34,7 +34,7 @@ class Game {
     this.onMove = event => {
       animations.add(
           new MoveAnimation(
-              this.time, 
+              getTime(), 
               event.theMove,
               this.currentDrag,
               this.boardOrientation
@@ -68,6 +68,13 @@ class Game {
 
   setP2P(p2p){
     this.p2p = p2p;
+  }
+
+  updatePeer(mouse){
+    if (getTime() % this.me.refreshTime === 0) this.p2p.send(new Action("hand", mouse));
+    this.you.update();
+    this.me.updateLocal(mouse);
+    this.checkForHandShake();
   }
 
   setupOnlineGame(isHost){
