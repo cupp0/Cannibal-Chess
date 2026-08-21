@@ -1,6 +1,6 @@
-import MoveAnimation from './moveAnimation.js';
 import CannibalAnimation from './cannibalAnimation.js';
 import CaptureAnimation from './captureAnimation.js';
+import PromotionAnimation from './promotionAnimation.js';
 import MenuAnimation from './MenuAnimation.js';
 import MenuRingAnimation from './MenuRingAnimation.js';
 import {playSound, pauseSound} from '../audio.js'
@@ -41,15 +41,24 @@ export default class AnimationManager {
         this.animations.forEach(a => a.draw(ctx));
     }
 
-    onAnimationEnd(a){
-        if (a instanceof MoveAnimation){
-            if (a.move.type === "cannibal"){
-                this.add(new CannibalAnimation(a.currentTime, a.move, a.orientation))
-            }
-            if (a.move.type === "capture"){
-                this.add(new CaptureAnimation(a.currentTime, a.move, a.orientation))
-            }
+    animateMove(time, move, orientation){
+        switch(move.type){
+            case "cannibal" :
+            this.add(new CannibalAnimation(time, move, orientation))
+            break;
+
+            case "capture" :
+            this.add(new CaptureAnimation(time, move, orientation))
+            break;
+
+            case "promotion" :
+            this.add(new PromotionAnimation(time, move, orientation))
+            break;
+
         }
+    }
+
+    onAnimationEnd(a){
         if (a instanceof MenuAnimation){
             this.ringAnimation(a.finalFrame);
         }

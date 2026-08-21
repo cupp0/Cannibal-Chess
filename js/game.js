@@ -9,7 +9,6 @@ import {playSound} from "./audio.js";
 import Move from './move.js';
 import Action from './net/action.js';
 import PieceDrag from './drag.js';
-import MoveAnimation from './animation/moveAnimation.js';
 import {getTime} from './main.js'
 
 class Game {
@@ -32,14 +31,11 @@ class Game {
 
   initAnimStuff(animations){
     this.onMove = event => {
-      animations.add(
-          new MoveAnimation(
-              getTime(), 
-              event.theMove,
-              this.currentDrag,
-              this.boardOrientation
-          )
-      );
+      animations.animateMove(
+          getTime(), 
+          event.theMove,
+          this.boardOrientation
+      )
     };
   }
 
@@ -308,9 +304,10 @@ class Game {
   }
 
   playMoveAudio(t){
-    if (t === "normal" || t === "castling" || t === "promotion" || t === "enPassantable") playSound("move");
+    if (t === "normal" || t === "castling" || t === "enPassantable") playSound("move");
     if (t === "enPassant" || t === "capture")playSound("capture");
     if (t === "cannibal") playSound("cannibal");
+    if (t === "promotion") playSound("ring");
   }
 
   // ~ ~ ~ ~ ~ LOGIC ~ ~ ~ ~ ~ //
@@ -321,7 +318,6 @@ class Game {
   }
 
   executeLiveMove(theMove, isLocalSource){
-    console.log(theMove)
     this.executeMove(theMove)
     this.playMoveAudio(theMove.type);
     this.storePosition(this.getCFen());
@@ -427,9 +423,17 @@ class Game {
     
     //cannibal promotion
     else {
+      
+      let label = move.piece.label;
       const pawn = move.piece.color === "black" ? "p" : "P"
-      const queen = move.piece.color === "black" ? "q" : "Q"
-      const label = move.piece.label.replace(pawn, queen)
+      const queen = move.piece.color === "black" ? "q" : "Q"     
+
+      if (label.toLowerCase().includes("q")){
+          label = label.replace(pawn, '');
+      } else {
+          label = label.replace(pawn, queen)
+      }
+
       this.setPiece(move.to, this.createPiece(label))
     }
   }

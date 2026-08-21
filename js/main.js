@@ -49,6 +49,8 @@ function loop() {
     //send cursor position to peer
     if (game.you.active)game.updatePeer(mouse)
   
+    animations.update(time);
+
     //render
     switch(page.state){
       case "menu":
@@ -59,9 +61,9 @@ function loop() {
         break;
     }
 
-  animations.update(time);
-  animations.draw(ctx);
-  time++;
+    animations.draw(ctx);
+    
+    time++;
 }
 
 export function getTime(){
