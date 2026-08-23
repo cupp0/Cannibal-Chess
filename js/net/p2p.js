@@ -7,6 +7,8 @@ class P2P{
 
   host(roomName) {
 
+      console.log(roomName)
+
       this.peer = new Peer(roomName);
 
       this.peer.on("open", id => {

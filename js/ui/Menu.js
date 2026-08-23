@@ -51,7 +51,8 @@ export default class Menu {
         this.page.setState("game")
     }
 
-    host(roomName){
+    host(){
+        const roomName = this.hostField.text
         this.p2p.host(roomName);
         this.game.setP2P(this.p2p)
         this.clock.setP2P(this.p2p)
@@ -61,10 +62,11 @@ export default class Menu {
         this.page.setState("game");
     }
 
-    join(roomName){
+    join(){
+        const roomName = this.joinField.text
         this.p2p.join(roomName)
-        this.game.setP2P(p2p)
-        this.clock.setP2P(p2p)
+        this.game.setP2P(this.p2p)
+        this.clock.setP2P(this.p2p)
         this.game.setPlayerColors(this.game.me, ["black"])
         this.game.setPlayerColors(this.game.you, ["white"])
         this.game.boardOrientation *= -1;

@@ -6,10 +6,15 @@ export default class Player{
         this.pos = {x: x, y: y}
         this.setTargetPos(x, y)
         this.active = false;
+        this.handAction = "handClosed"
     }
 
     setColors(colors){
         this.colors = colors;
+    }
+
+    setHandAction(action){
+        this.handAction = action
     }
 
     setTargetPos(x, y){

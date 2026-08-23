@@ -75,6 +75,8 @@ class Game {
 
   setupOnlineGame(isHost){
       this.you.active = true;    
+      this.you.setHandAction("handExtendedFlipped")
+      this.me.setHandAction("handExtended")
       this.setPlayerColors(this.me, isHost ? ["white"] : ["black"])
       this.setPlayerColors(this.you, isHost ? ["black"] : ["white"])
       this.handShakeComplete = false;
@@ -121,6 +123,14 @@ class Game {
 
   setDrag(theDrag, isLocalSource){
     this.currentDrag = theDrag;
+    if (theDrag){
+        const isMe = theDrag.player === this.me
+        if (isMe) {this.me.setHandAction("handGrab")}
+        else { this.you.setHandAction("handGrabFlipped") }
+    } else {
+      this.updateHandAction();
+    }
+    
     if (this.p2p && isLocalSource){
         this.p2p.send(new Action("drag", this.currentDrag))
     }
@@ -286,7 +296,9 @@ class Game {
       if(theMove && this.currentPlayer === theMove.piece.color) {
         this.executeLiveMove(theMove, true);
         return;
-      } 
+      } else {
+        this.updateHandAction();
+      }
 
       this.setDrag(null, true);
     }
@@ -324,6 +336,7 @@ class Game {
     this.deselect();
     this.checkForMate(theMove.piece.color)
     this.currentPlayer = this.getOtherPlayer();
+    this.updateHandAction();
     if (this.p2p && isLocalSource){
         this.p2p.send(new Action("move", theMove))
     }
@@ -332,6 +345,18 @@ class Game {
         theMove
     });
 
+  }
+
+  //assumes normal open/closed hand
+  updateHandAction(){
+    if (!this.handShakeComplete){
+      this.me.setHandAction("handExtended")
+      this.you.setHandAction("handExtendedFlipped")
+      return;
+    }
+    const myTurn = this.me.colors.includes(this.currentPlayer);
+    this.me.setHandAction(myTurn ? "handPointing" : "handClosed")
+    this.you.setHandAction(myTurn ? "handClosedFlipped" : "handPointingFlipped")
   }
 
   receivePeerMove(theMove){
@@ -522,10 +547,15 @@ class Game {
             this.activeHandShake = true;
             this.handShakeComplete = true;
             this.p2p.send(new Action("handshake", ""))
-        } else this.activeHandShake = false;
+            this.you.setHandAction("handShake")
+            this.me.setHandAction("handShake")
+        } else {
+            this.activeHandShake = false;
+        }
     } else {
       if (shake) return;
       this.activeHandShake = false;
+      this.updateHandAction();
     }
   }
 

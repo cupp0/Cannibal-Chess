@@ -1,24 +1,32 @@
 const TILE = 32;
 const MOVEDOT = 8;
 const assetBuffers = new Map()
-const spriteNames = [
-  "white-k",
-  "black-k",
-  "playoffline",
-  "host",
-  "join",
-  "titlesplash",
-  "hand",
-  "closedHand",
-  "handShake",
-  "clockBody",
-  "clockButtonUp",
-  "clockButtonDown",
-  "clockTimerKnob"
+const menuSpriteNames = [
+    "playoffline",
+    "host",
+    "join",
+    "titlesplash"
 ];
+const handSpriteNames = [
+    "handClosed", 
+    "handClosedFlipped",
+    "handExtended",
+    "handExtendedFlipped",
+    "handGrab",
+    "handGrabFlipped",
+    "handPointing",
+    "handPointingFlipped",
+    "handShake"
+]
 
-addPieceSpriteNames();
-const flippers = ["hand", "closedHand", "clockBody", "clockButtonUp", "clockButtonDown", "clockTimerKnob"]
+const clockSpriteNames = [
+    "clockBody",
+    "clockButtonUp",
+    "clockButtonDown",
+    "clockTimerKnob"
+]
+
+const pieceSpriteNames = addPieceSpriteNames();
 let menuStartTime = 0;
 
 function forEachSquare(callback) {
@@ -37,19 +45,39 @@ function forEachPixel(buffer, callback) {
     }
 }
 
+//way more text that just writing out all the pieces haha
 function addPieceSpriteNames(){
+    const l = []
+    l.push("white-k");
+    l.push("black-k");
     const pieceOrder = ['b', 'n', 'p', 'q', 'r']    
     for (const i of generateCombinations(5)){
         let pieceComb = "";
         for (const j of i){
-        pieceComb += pieceOrder[j];
+            pieceComb += pieceOrder[j];
         }
-
         const wName = "white-"+pieceComb
         const bName = "black-"+pieceComb
-        spriteNames.push(wName);
-        spriteNames.push(bName);
+        l.push(wName);
+        l.push(bName);
     }
+    return l;
+}
+
+function generateCombinations(n) {
+    const result = [];
+    function backtrack(start, combo) {
+        if (combo.length > 0) {
+            result.push([...combo]);
+        }
+        for (let i = start; i < n; i++) {
+            combo.push(i);
+            backtrack(i + 1, combo);
+            combo.pop();
+        }
+    }
+    backtrack(0, []);
+    return result;
 }
 
 export async function initBuffers(page){
@@ -58,15 +86,27 @@ export async function initBuffers(page){
 }
 
 async function loadBuffers(){
-    for (const name of spriteNames) {
-      const buffer = await addBuffer(name);
+    for (const name of menuSpriteNames) {
+      const buffer = await addBuffer("menu", name);
+      assetBuffers.set(name, buffer)
+    }
+    for (const name of handSpriteNames) {
+      const buffer = await addBuffer("hand", name);
+      assetBuffers.set(name, buffer)
+    }
+    for (const name of clockSpriteNames) {
+      const buffer = await addBuffer("clock", name);
+      assetBuffers.set(name, buffer)
+    }
+    for (const name of pieceSpriteNames) {
+      const buffer = await addBuffer("pieces", name);
       assetBuffers.set(name, buffer)
     }
 }
 
-async function addBuffer(name){
+async function addBuffer(location, name){
     const img = new Image();
-    img.src = "./assets/sprites/"+name+".png"
+    img.src = "./assets/sprites/"+location+"/"+name+".png"
 
     await img.decode();
     const tempCanvas = document.createElement("canvas");
@@ -93,22 +133,6 @@ async function addBuffer(name){
 
 export function getBuffer(name){
   return assetBuffers.get(name)
-}
-
-function generateCombinations(n) {
-    const result = [];
-    function backtrack(start, combo) {
-        if (combo.length > 0) {
-        result.push([...combo]);
-        }
-        for (let i = start; i < n; i++) {
-        combo.push(i);
-        backtrack(i + 1, combo);
-        combo.pop();
-        }
-    }
-    backtrack(0, []);
-    return result;
 }
 
 function drawBoard(ctx) {
@@ -199,32 +223,26 @@ function highlightBuffer(buffer, amount, type){
 function drawPlayers(ctx, game, mouse){
 
   if (game.activeHandShake){
-      const handshakeBuffer = assetBuffers.get("flippedHandShake");
       const mePos = {x: mouse.world.x - 12 , y: mouse.world.y - 8}
-
-      renderBuffer(ctx, handshakeBuffer, mePos.x, mePos.y )
+      renderBuffer(ctx, assetBuffers.get("handShake"), mePos.x, mePos.y )
       drawArm(ctx, mePos, 1)
       drawArm(ctx, mePos, -1)
-
       return;
   }
 
+  const myHand = game.me.handAction;
+  const yourHand = game.you.handAction;
+  
   //render opponent
   if (game.you.active) {
-      const renderedHand = game.you.colors.includes(game.currentPlayer) ?
-      assetBuffers.get("flippedHand") : assetBuffers.get("flippedClosedHand");
       const youPos = {x: 256 - game.you.pos.x - 12 , y: 256 - game.you.pos.y - 18}
-
-      renderBuffer(ctx, renderedHand, youPos.x , youPos.y)
+      renderBuffer(ctx, assetBuffers.get(yourHand), youPos.x , youPos.y)
       drawArm(ctx, youPos, -1)
   }
 
   //render me
-  const hand = game.me.colors.includes(game.currentPlayer) ?
-  assetBuffers.get("hand") : assetBuffers.get("closedHand")
   const mePos = {x: mouse.world.x - 13 , y: mouse.world.y - 3}
-
-  renderBuffer(ctx, hand, mePos.x, mePos.y )
+  renderBuffer(ctx, assetBuffers.get(myHand), mePos.x, mePos.y )
   drawArm(ctx, mePos, 1)
   
 }
@@ -300,7 +318,7 @@ export function renderSprite(ctx, name, xPos, yPos){
 
 export function renderBuffer(ctx, b, xPos, yPos){
     const finalPos = {x: Math.floor(xPos), y: Math.floor(yPos)}
-    if(!b)return;
+    if(!b){console.log("no buffer");return;}
     forEachPixel(b, (x, y) =>{
         ctx.fillStyle = `rgba(${b[y][x][0]},${b[y][x][1]},${b[y][x][2]},${b[y][x][3]})`;
         ctx.fillRect(finalPos.x + x , finalPos.y + y, 1.1, 1.1);
