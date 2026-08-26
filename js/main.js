@@ -37,7 +37,8 @@ let lastFrameTime = 0;
 
 loop();
 function loop() {
-
+    // console.log("me: " + game.me.pos.x + ", " + game.me.pos.y)
+    // console.log("you: " + game.you.pos.x + ", " + game.you.pos.y)
     requestAnimationFrame(loop);
 
     //limit fps

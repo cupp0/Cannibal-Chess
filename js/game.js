@@ -67,15 +67,16 @@ class Game {
   }
 
   updatePeer(mouse){
-    if (getTime() % this.me.refreshTime === 0) this.p2p.send(new Action("hand", mouse));
+    if (getTime() % this.me.refreshTime === 0) this.p2p.send(new Action("hand", mouse.world));
     this.you.update();
-    this.me.updateLocal(mouse);
     this.checkForHandShake();
   }
 
+  //Is this doing too much
   setupOnlineGame(isHost){
+      this.me.setPerspective(isHost ? 1 : -1)
       this.you.active = true;    
-      this.you.setHandAction("handExtendedFlipped")
+      this.you.setHandAction("handExtended")
       this.me.setHandAction("handExtended")
       this.setPlayerColors(this.me, isHost ? ["white"] : ["black"])
       this.setPlayerColors(this.you, isHost ? ["black"] : ["white"])
@@ -123,10 +124,9 @@ class Game {
 
   setDrag(theDrag, isLocalSource){
     this.currentDrag = theDrag;
-    if (theDrag){
-        const isMe = theDrag.player === this.me
-        if (isMe) {this.me.setHandAction("handGrab")}
-        else { this.you.setHandAction("handGrabFlipped") }
+    if (theDrag && theDrag.player){
+        if (isLocalSource)this.me.setHandAction("handGrab")
+          else this.you.setHandAction("handGrab")
     } else {
       this.updateHandAction();
     }
@@ -309,7 +309,6 @@ class Game {
   onKeyDown(event){
     if (event.key.startsWith("Arrow")) event.preventDefault();
     switch(event.key){
-      case "f" : this.boardOrientation *= -1; return;
       case "ArrowLeft" : this.tryRetreat(); return;
       case "ArrowRight" : this.tryAdvance(); return;
     }
@@ -351,12 +350,12 @@ class Game {
   updateHandAction(){
     if (!this.handShakeComplete){
       this.me.setHandAction("handExtended")
-      this.you.setHandAction("handExtendedFlipped")
+      this.you.setHandAction("handExtended")
       return;
     }
     const myTurn = this.me.colors.includes(this.currentPlayer);
     this.me.setHandAction(myTurn ? "handPointing" : "handClosed")
-    this.you.setHandAction(myTurn ? "handClosedFlipped" : "handPointingFlipped")
+    this.you.setHandAction(myTurn ? "handClosed" : "handPointing")
   }
 
   receivePeerMove(theMove){
@@ -364,7 +363,7 @@ class Game {
   }
 
   receiveHandUpdate(opp){
-    this.you.setTargetPos(opp.world.x, opp.world.y)
+    this.you.setTargetPos(opp.x, opp.y)
   }
 
   receiveDragUpdate(drag){
@@ -374,6 +373,7 @@ class Game {
 
   receiveHandShake(){
       this.activeHandShake = true;
+      this.handShakeComplete = true;
   }
 
   executeMove(move){
@@ -538,8 +538,8 @@ class Game {
   }
 
   checkForHandShake(){
-    const mePos = this.me.getAbsolutePosition();
-    const youPos = this.you.getAbsolutePosition();
+    const mePos = this.me.pos;
+    const youPos = this.you.pos;
     const dist = {x: Math.abs(mePos.x - youPos.x), y: Math.abs(mePos.y - youPos.y)}
     const shake = dist.x < 10 && dist.y < 10
     if (this.activeHandShake === false){

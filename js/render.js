@@ -9,13 +9,9 @@ const menuSpriteNames = [
 ];
 const handSpriteNames = [
     "handClosed", 
-    "handClosedFlipped",
     "handExtended",
-    "handExtendedFlipped",
     "handGrab",
-    "handGrabFlipped",
     "handPointing",
-    "handPointingFlipped",
     "handShake"
 ]
 
@@ -191,8 +187,8 @@ function drawPiece(game, squareX, squareY, ctx){
 function drawDraggedPiece(ctx, game, squareX, squareY, mouse){
     const buffer = assetBuffers.get(game.board[squareY][squareX].getAssetString());
     const pos = game.me.colors.includes(game.board[squareY][squareX].color) ?
-    {x: mouse.world.x - 16, y: mouse.world.y-16} :
-    {x: 256 - game.you.pos.x - 16 , y: 256 - game.you.pos.y - 16}
+    toScreen({x: mouse.world.x-(14*game.me.perspective), y: mouse.world.y-(6*game.me.perspective)}, game.me.perspective):
+    toScreen({x: game.you.pos.x -(18*game.me.perspective), y: game.you.pos.y-32*game.me.perspective}, game.me.perspective)
     renderBuffer(ctx, highlightBuffer(buffer, 255, "gray"), pos.x, pos.y)
 }
 
@@ -223,10 +219,10 @@ function highlightBuffer(buffer, amount, type){
 function drawPlayers(ctx, game, mouse){
 
   if (game.activeHandShake){
-      const mePos = {x: mouse.world.x - 12 , y: mouse.world.y - 8}
+      const mePos = {x:game.me.relPos.x - 14, y: game.me.relPos.y};
       renderBuffer(ctx, assetBuffers.get("handShake"), mePos.x, mePos.y )
       drawArm(ctx, mePos, 1)
-      drawArm(ctx, mePos, -1)
+      drawArm(ctx, {x:mePos.x+32, y: mePos.y+32}, -1)
       return;
   }
 
@@ -235,22 +231,23 @@ function drawPlayers(ctx, game, mouse){
   
   //render opponent
   if (game.you.active) {
-      const youPos = {x: 256 - game.you.pos.x - 12 , y: 256 - game.you.pos.y - 18}
-      renderBuffer(ctx, assetBuffers.get(yourHand), youPos.x , youPos.y)
-      drawArm(ctx, youPos, -1)
+      const offset = {x: 14*game.me.perspective, y: 0}
+      const youPos = toScreen({x:game.you.pos.x+offset.x, y: game.you.pos.y+offset.y}, game.me.perspective)
+      renderSharedBuffer(ctx, assetBuffers.get(yourHand), youPos.x , youPos.y, -1)
+      drawArm(ctx, {x:youPos.x, y:youPos.y}, -1)
   }
 
   //render me
-  const mePos = {x: mouse.world.x - 13 , y: mouse.world.y - 3}
-  renderBuffer(ctx, assetBuffers.get(myHand), mePos.x, mePos.y )
-  drawArm(ctx, mePos, 1)
+  const mePos = {x:game.me.relPos.x - 14, y: game.me.relPos.y};
+  renderBuffer(ctx, assetBuffers.get(myHand), mePos.x, mePos.y)
+  drawArm(ctx, {x:mePos.x, y:mePos.y}, 1)
   
 }
 
 //p = buffer position, o = orientation
 function drawArm(ctx, p, o){
-  const xOff = 11.5
-  const yOff = o === 1? 32 : 0;
+  const xOff = o === 1 ? 11.5 : -20.5
+  const yOff = 31*o
   const leftOfWrist = {x: p.x+xOff, y: p.y+yOff}
 
 
@@ -278,25 +275,6 @@ function drawArm(ctx, p, o){
   ctx.stroke(); 
 }
 
-function flipBuffer(buffer, horizontal, vertical){
-  const newBuffer = []
-  for (let y = 0; y < buffer.length; y++){
-    newBuffer[y] = [];
-    for (let x = 0; x < buffer[y].length; x++){
-      if (vertical && !horizontal){
-          newBuffer[y][x] = buffer[buffer.length - 1 - y][x]
-      }
-      if (horizontal && !vertical){
-          newBuffer[y][x] = buffer[y][buffer[y].length - 1 - x]
-      }
-      if (horizontal && vertical){
-          newBuffer[y][x] = buffer[buffer.length - 1 - y][buffer[y].length - 1 - x]
-      }
-    }
-  }
-  return newBuffer
-}
-
 export function dissolve(ctx, b1, b2, xPos, yPos, amount){
   const buffer = []
       for (let y = 0; y < b1.length; y++) {
@@ -317,11 +295,20 @@ export function renderSprite(ctx, name, xPos, yPos){
 }
 
 export function renderBuffer(ctx, b, xPos, yPos){
-    const finalPos = {x: Math.floor(xPos), y: Math.floor(yPos)}
     if(!b){console.log("no buffer");return;}
+    const finalPos = {x: Math.floor(xPos), y: Math.floor(yPos)}
     forEachPixel(b, (x, y) =>{
         ctx.fillStyle = `rgba(${b[y][x][0]},${b[y][x][1]},${b[y][x][2]},${b[y][x][3]})`;
         ctx.fillRect(finalPos.x + x , finalPos.y + y, 1.1, 1.1);
+    })
+}
+
+export function renderSharedBuffer(ctx, b, xPos, yPos, persp){  
+    if(!b){console.log("no buffer");return;}
+    const finalPos = {x: Math.floor(xPos), y: Math.floor(yPos)}
+    forEachPixel(b, (x, y) =>{
+        ctx.fillStyle = `rgba(${b[y][x][0]},${b[y][x][1]},${b[y][x][2]},${b[y][x][3]})`;
+        ctx.fillRect(finalPos.x + (x*persp) , finalPos.y + (y*persp), 1.1, 1.1);
     })
 }
 
@@ -389,26 +376,34 @@ export function drawMenu(ctx, menu) {
 
 export function drawGame(ctx, overlayCtx, game, animations, mouse, display, overlay, clock){
   overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);    
-  drawClock(clock, overlayCtx);
+  drawClock(game, clock, overlayCtx);
   drawBoard(ctx);
   drawMoveDots(ctx, game);
   drawPieces(ctx, game, animations, mouse);
   drawPlayers(overlayCtx, game, mouse);
 }
 
-function drawClock(clock, ctx) {
-    renderBuffer(ctx, assetBuffers.get("clockBody"), clock.pos.x, clock.pos.y);
-    for (const widget of clock.widgets){
-        const buffer = assetBuffers.get(widget.name);
-        if (buffer) renderBuffer(ctx, buffer, widget.x, widget.y);
-    }
-        ctx.strokeStyle = 'black'
-
-    renderClockHands(ctx, clock.blackTime, clock.pos.x+21, clock.pos.y + 21);
-    renderClockHands(ctx, clock.whiteTime, clock.pos.x+21, clock.pos.y + 69);
+export function toScreen(pos, persp){
+  if (persp === -1) return {x: 256 - pos.x, y: 256 - pos.y}
+  return pos
 }
 
-function renderClockHands(ctx, ms, x, y){
+function drawClock(game, clock, ctx) {
+  const cPos = toScreen(clock.pos, game.me.perspective)
+    renderSharedBuffer(ctx, assetBuffers.get("clockBody"), cPos.x, cPos.y, game.me.perspective);
+    for (const widget of clock.widgets){
+        const buffer = assetBuffers.get(widget.name);
+        const wPos = toScreen({x:widget.x, y: widget.y}, game.me.perspective)
+        if (buffer) renderSharedBuffer(ctx, buffer, wPos.x, wPos.y, game.me.perspective);
+    }
+    ctx.strokeStyle = 'black'
+    renderClockHands(ctx, clock.blackTime, clock.pos.x+21, clock.pos.y+22, game.me.perspective);
+    renderClockHands(ctx, clock.whiteTime, clock.pos.x+21, clock.pos.y+69, game.me.perspective);
+}
+
+function renderClockHands(ctx, ms, x, y, persp){
+
+    const cPos = toScreen({x: x, y: y}, persp)
     const time = ms / 1000;
     const radius = 16;
     const seconds = time % 60;
@@ -425,17 +420,21 @@ function renderClockHands(ctx, ms, x, y){
     ctx.beginPath();
 
     // Minute hand
-    ctx.moveTo(x, y);
+    ctx.moveTo(cPos.x, cPos.y);
+
+    const mPos = toScreen({x: x + Math.cos(minuteAngle) * minuteLength, y: y + Math.sin(minuteAngle) * minuteLength}, persp)
     ctx.lineTo(
-        x + Math.cos(minuteAngle) * minuteLength,
-        y + Math.sin(minuteAngle) * minuteLength
+        mPos.x,
+        mPos.y
     );
 
     // Second hand
-    ctx.moveTo(x, y);
+    ctx.moveTo(cPos.x, cPos.y);
+    
+    const sPos = toScreen({x: x + Math.cos(secondAngle) * secondLength, y: y + Math.sin(secondAngle) * secondLength}, persp)
     ctx.lineTo(
-        x + Math.cos(secondAngle) * secondLength,
-        y + Math.sin(secondAngle) * secondLength
+        sPos.x,
+        sPos.y
     );
 
     ctx.stroke();

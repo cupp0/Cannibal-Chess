@@ -49,6 +49,8 @@ export default class Menu {
 
     playOffline(){
         this.page.setState("game")
+        this.game.handShakeComplete = true;
+        this.game.me.setHandAction("handPointing")
     }
 
     host(){

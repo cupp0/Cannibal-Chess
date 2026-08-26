@@ -5,12 +5,13 @@ import {getTime} from './main.js'
 export function setupInput(mouse, menu, clock, game, page, animations){
 
     window.addEventListener("mousemove", e =>{
-        mouse.updateScreenCoords({x:e.clientX, y:e.clientY})
+        mouse.updateScreenCoords({x:e.clientX, y:e.clientY}, game.me.perspective)
         clock.onMouseMove(mouse);
         switch (page.state){
             case "menu" : menu.onMouseMove(mouse); break;
             case "game" :
-            mouse.updateBoardCoords(game);
+            game.me.updateLocal(mouse)
+            mouse.updateBoardCoords();
             game.onMouseMove(mouse.board.x, mouse.board.y); break;
         }    
     })
