@@ -5,7 +5,7 @@ export default class MenuAnimation {
     constructor(menu, startTime) {
         this.menu = menu;
         this.startTime = startTime;
-        this.duration = 1;
+        this.duration = 80;
         this.titleSplash = getBuffer("titlesplash");
         this.mask = this.createEmptyBuffer(this.titleSplash);
         this.transMask = this.createEmptyBuffer(this.titleSplash);
