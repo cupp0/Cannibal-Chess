@@ -397,45 +397,63 @@ function drawClock(game, clock, ctx) {
         if (buffer) renderSharedBuffer(ctx, buffer, wPos.x, wPos.y, game.me.perspective);
     }
     ctx.strokeStyle = 'black'
-    renderClockHands(ctx, clock.blackTime, clock.pos.x+21, clock.pos.y+22, game.me.perspective);
-    renderClockHands(ctx, clock.whiteTime, clock.pos.x+21, clock.pos.y+69, game.me.perspective);
+    renderClockHands(ctx, clock.blackTime, clock.pos.x+21, clock.pos.y+21, game.me.perspective);
+    renderClockHands(ctx, clock.whiteTime, clock.pos.x+21, clock.pos.y+68, game.me.perspective);
 }
 
 function renderClockHands(ctx, ms, x, y, persp){
 
-    const cPos = toScreen({x: x, y: y}, persp)
     const time = ms / 1000;
     const radius = 16;
     const seconds = time % 60;
     const minutes = (time / 60) % 60;
 
-    // Angles in radians.
-    // 0 rad = 3 o'clock = your rotated 12 o'clock.
     const secondAngle = (seconds / 60) * Math.PI * 2;
     const minuteAngle = (minutes / 60) * Math.PI * 2;
 
     const secondLength = radius * 0.9;
     const minuteLength = radius * 0.65;
 
-    ctx.beginPath();
+    const cPos = {x: x, y: y}
+    const mPos = {x: x + Math.cos(minuteAngle) * minuteLength, y: y + Math.sin(minuteAngle) * minuteLength}
+    const sPos = {x: x + Math.cos(secondAngle) * secondLength, y: y + Math.sin(secondAngle) * secondLength}
 
-    // Minute hand
-    ctx.moveTo(cPos.x, cPos.y);
-
-    const mPos = toScreen({x: x + Math.cos(minuteAngle) * minuteLength, y: y + Math.sin(minuteAngle) * minuteLength}, persp)
-    ctx.lineTo(
-        mPos.x,
-        mPos.y
-    );
-
-    // Second hand
-    ctx.moveTo(cPos.x, cPos.y);
+    ctx.fillStyle = "black" 
+    ctx.fillRect(mPos.x, mPos.y, 1, 1);
+    ctx.fillRect(sPos.x, sPos.y, 1, 1);
+    for (let i = - 16; i < 16; i++){
+      for (let j = - 16; j < 16; j++){
+        const p = {x:x+i, y:y+j}
+        if (distancePointToLineSegment(p.x, p.y, cPos.x, cPos.y, mPos.x, mPos.y) < 1){
+           const point = toScreen(p, persp)
+           ctx.fillRect(point.x, point.y, 1, 1);
+        }
+        if (distancePointToLineSegment(p.x, p.y, cPos.x, cPos.y, sPos.x, sPos.y) < .5){
+           const point = toScreen(p, persp)
+           ctx.fillRect(point.x, point.y, 1, 1);
+        }
+      }
+    }
     
-    const sPos = toScreen({x: x + Math.cos(secondAngle) * secondLength, y: y + Math.sin(secondAngle) * secondLength}, persp)
-    ctx.lineTo(
-        sPos.x,
-        sPos.y
-    );
+}
 
-    ctx.stroke();
+function distancePointToLineSegment(x0, y0, x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+
+    // If the segment is just a single point
+    if (dx === 0 && dy === 0) {
+        return Math.sqrt(Math.pow(x0 - x1, 2) + Math.pow(y0 - y1, 2));
+    }
+
+    // Calculate projection factor t (clamped between 0 and 1)
+    let t = ((x0 - x1) * dx + (y0 - y1) * dy) / (dx * dx + dy * dy);
+    t = Math.max(0, Math.min(1, t));
+
+    // Find the closest point on the segment
+    const closestX = x1 + t * dx;
+    const closestY = y1 + t * dy;
+
+    // Return the distance from P to the closest point
+    return Math.sqrt(Math.pow(x0 - closestX, 2) + Math.pow(y0 - closestY, 2));
 }

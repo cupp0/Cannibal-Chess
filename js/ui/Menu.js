@@ -71,6 +71,7 @@ export default class Menu {
         this.clock.setP2P(this.p2p)
         this.game.setPlayerColors(this.game.me, ["black"])
         this.game.setPlayerColors(this.game.you, ["white"])
+        this.game.me.setPerspective(-1)
         this.game.boardOrientation *= -1;
         this.page.setState("game");
     }

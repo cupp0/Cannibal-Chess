@@ -74,7 +74,7 @@ class Game {
 
   //Is this doing too much
   setupOnlineGame(isHost){
-      this.me.setPerspective(isHost ? 1 : -1)
+      //this.me.setPerspective(isHost ? 1 : -1)
       this.you.active = true;    
       this.you.setHandAction("handExtended")
       this.me.setHandAction("handExtended")
