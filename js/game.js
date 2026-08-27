@@ -330,11 +330,11 @@ class Game {
 
   executeLiveMove(theMove, isLocalSource){
     this.executeMove(theMove)
+    this.currentPlayer = this.getOtherPlayer();
     this.playMoveAudio(theMove.type);
     this.storePosition(this.getCFen());
     this.deselect();
     this.checkForMate(theMove.piece.color)
-    this.currentPlayer = this.getOtherPlayer();
     this.updateHandAction();
     if (this.p2p && isLocalSource){
         this.p2p.send(new Action("move", theMove))
@@ -527,6 +527,7 @@ class Game {
     if (this.boardIndex > 0){
       this.boardIndex--;
       this.loadCFen(this.history[this.boardIndex])
+      console.log(this.currentPlayer)
     }
   }
 
@@ -541,7 +542,7 @@ class Game {
     const mePos = this.me.pos;
     const youPos = this.you.pos;
     const dist = {x: Math.abs(mePos.x - youPos.x), y: Math.abs(mePos.y - youPos.y)}
-    const shake = dist.x < 10 && dist.y < 10
+    const shake = dist.x < 15 && dist.y < 15
     if (this.activeHandShake === false){
         if (shake){
             this.activeHandShake = true;

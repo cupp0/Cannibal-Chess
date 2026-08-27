@@ -5,6 +5,7 @@ class Page{
 
   setState(val){
     this.state = val;
+    if (val === "game")document.body.style.cursor = 'none';
   }
 }
 

@@ -43,6 +43,7 @@ export default class Player{
     updateLocal(mouse){
         this.pos = mouse.world
         this.relPos = toScreen(this.pos, this.perspective)
+        this.board = this.perspective === 1 ? mouse.board : {x: 7 - mouse.board.x, y: 7 - mouse.board.y}
     }
 
 }

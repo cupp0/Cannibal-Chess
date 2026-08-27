@@ -339,7 +339,9 @@ function drawMoveDots(ctx, game) {
 
       // 2. Set the stroke color and line width
       ctx.strokeStyle = "rgba(255, 255, 255, .75)";
-      ctx.lineWidth = 1;
+      const hovered = game.me.board;
+      console.log(hovered, actualTile)
+      ctx.lineWidth = (hovered.x === actualTile.x && hovered.y === actualTile.y) ? 3 : 1
 
       // 3. Draw the outlined rectangle
       ctx.strokeRect(actualTile.x * TILE,
@@ -392,7 +394,8 @@ function drawClock(game, clock, ctx) {
   const cPos = toScreen(clock.pos, game.me.perspective)
     renderSharedBuffer(ctx, assetBuffers.get("clockBody"), cPos.x, cPos.y, game.me.perspective);
     for (const widget of clock.widgets){
-        const buffer = assetBuffers.get(widget.name);
+        let buffer = assetBuffers.get(widget.name);
+        if (widget.hover) buffer = highlightBuffer(buffer, 255, "gray")
         const wPos = toScreen({x:widget.x, y: widget.y}, game.me.perspective)
         if (buffer) renderSharedBuffer(ctx, buffer, wPos.x, wPos.y, game.me.perspective);
     }
