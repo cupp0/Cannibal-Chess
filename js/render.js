@@ -155,7 +155,7 @@ function drawBoard(ctx, ovCtx) {
       ctx.stroke(); 
     }
 
-    renderShadow(ovCtx, 9, {x:0, y:0}, {x:256, y:256})
+    renderShadow(ovCtx, 6, {x:0, y:0}, {x:256, y:256})
 }
 
 function renderShadow(ctx, shadowWidth, pos, dim){
@@ -414,8 +414,9 @@ function drawClock(game, clock, ovCtx, display) {
     renderClockHands(ovCtx, clock.blackTime, clock.pos.x+21, clock.pos.y+21, game.me.perspective);
     renderClockHands(ovCtx, clock.whiteTime, clock.pos.x+21, clock.pos.y+68, game.me.perspective);
 
-    const sPos = {x: cPos.x + display.xOff, y: cPos.y+display.yOff}
-    //renderShadow(ovCtx, 6, sPos, {x:56, y:90})
+    game.me.perspective === 1 ?
+    renderShadow(ovCtx, 6, {x:2*cPos.x, y:2*cPos.y}, {x:56, y:90}) :
+    renderShadow(ovCtx, 6, {x:cPos.x - 112, y:cPos.y}, {x:56, y:90}) 
   }
 
 function renderClockHands(ctx, ms, x, y, persp){
