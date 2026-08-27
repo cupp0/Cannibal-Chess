@@ -4,7 +4,8 @@ import Action from '../net/action.js';
 
 export default class Clock{
     constructor(){
-        this.pos = {x:264, y:83}
+        //relative to top left of board
+        this.pos = {x:260, y:83}
         this.currentTime = 0;
         this.whiteTime = 0;
         this.blackTime = 0;

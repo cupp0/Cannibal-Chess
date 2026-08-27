@@ -131,7 +131,7 @@ export function getBuffer(name){
   return assetBuffers.get(name)
 }
 
-function drawBoard(ctx) {
+function drawBoard(ctx, ovCtx) {
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 8; x++) {
         ctx.fillStyle = (x + y) % 2 === 0 ? 
@@ -154,6 +154,18 @@ function drawBoard(ctx) {
       ctx.lineTo(264, x*32); 
       ctx.stroke(); 
     }
+
+    renderShadow(ovCtx, 9, {x:0, y:0}, {x:256, y:256})
+}
+
+function renderShadow(ctx, shadowWidth, pos, dim){
+  ctx.strokeStyle = "rgba(0,0,0, .15)";
+  for (let i = 0; i < shadowWidth; i+=3){
+    ctx.lineWidth = shadowWidth - i; 
+    const finalPos = {x:(pos.x+i-shadowWidth)/2, y:(pos.y+i-shadowWidth)/2} ; 
+    const size = {x:dim.x+shadowWidth-i, y: dim.y+shadowWidth-i};
+    ctx.strokeRect(finalPos.x, finalPos.y, size.x, size.y)
+  }
 }
 
 //pass animations so we know which squares to not render during animation
@@ -340,7 +352,6 @@ function drawMoveDots(ctx, game) {
       // 2. Set the stroke color and line width
       ctx.strokeStyle = "rgba(255, 255, 255, .75)";
       const hovered = game.me.board;
-      console.log(hovered, actualTile)
       ctx.lineWidth = (hovered.x === actualTile.x && hovered.y === actualTile.y) ? 3 : 1
 
       // 3. Draw the outlined rectangle
@@ -378,8 +389,8 @@ export function drawMenu(ctx, menu) {
 
 export function drawGame(ctx, overlayCtx, game, animations, mouse, display, overlay, clock){
   overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);    
-  drawClock(game, clock, overlayCtx);
-  drawBoard(ctx);
+  drawClock(game, clock, overlayCtx, display);
+  drawBoard(ctx, overlayCtx);
   drawMoveDots(ctx, game);
   drawPieces(ctx, game, animations, mouse);
   drawPlayers(overlayCtx, game, mouse);
@@ -390,19 +401,22 @@ export function toScreen(pos, persp){
   return pos
 }
 
-function drawClock(game, clock, ctx) {
+function drawClock(game, clock, ovCtx, display) {
   const cPos = toScreen(clock.pos, game.me.perspective)
-    renderSharedBuffer(ctx, assetBuffers.get("clockBody"), cPos.x, cPos.y, game.me.perspective);
+    renderSharedBuffer(ovCtx, assetBuffers.get("clockBody"), cPos.x, cPos.y, game.me.perspective);
     for (const widget of clock.widgets){
         let buffer = assetBuffers.get(widget.name);
         if (widget.hover) buffer = highlightBuffer(buffer, 255, "gray")
         const wPos = toScreen({x:widget.x, y: widget.y}, game.me.perspective)
-        if (buffer) renderSharedBuffer(ctx, buffer, wPos.x, wPos.y, game.me.perspective);
+        if (buffer) renderSharedBuffer(ovCtx, buffer, wPos.x, wPos.y, game.me.perspective);
     }
-    ctx.strokeStyle = 'black'
-    renderClockHands(ctx, clock.blackTime, clock.pos.x+21, clock.pos.y+21, game.me.perspective);
-    renderClockHands(ctx, clock.whiteTime, clock.pos.x+21, clock.pos.y+68, game.me.perspective);
-}
+    ovCtx.strokeStyle = 'black'
+    renderClockHands(ovCtx, clock.blackTime, clock.pos.x+21, clock.pos.y+21, game.me.perspective);
+    renderClockHands(ovCtx, clock.whiteTime, clock.pos.x+21, clock.pos.y+68, game.me.perspective);
+
+    const sPos = {x: cPos.x + display.xOff, y: cPos.y+display.yOff}
+    //renderShadow(ovCtx, 6, sPos, {x:56, y:90})
+  }
 
 function renderClockHands(ctx, ms, x, y, persp){
 

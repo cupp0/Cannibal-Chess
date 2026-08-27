@@ -1,11 +1,15 @@
 class Page{
-  constructor(val){
+  constructor(val, callback){
     this.state = val
+    this.callback = callback
   }
 
   setState(val){
     this.state = val;
-    if (val === "game")document.body.style.cursor = 'none';
+    if (val === "game"){
+      document.body.style.cursor = 'none';
+      this.callback();
+    }
   }
 }
 
