@@ -9,6 +9,8 @@ import Page from './page.js';
 import Menu from './ui/Menu.js';
 import Clock from './ui/Clock.js';
 import AnimationManager from './animation/animationManager.js';
+import MenuAnimation from './animation/MenuAnimation.js';
+import {playSound} from './audio.js'
 
 let time = 0;
 const bgCanvas = document.getElementById("background");
@@ -28,7 +30,7 @@ function renderBackground(){
   const diff = {x: bgCanvas.width - benchDims.x, y: bgCanvas.height - benchDims.y}
   bgCtx.drawImage(background, diff.x/2, diff.y/2, benchDims.x, benchDims.y)
 }
-const page = new Page("pageLoad", renderBackground)
+const page = new Page("pageLoad", renderBackground, beginTitleSequence)
 const startingPosition = "r,n,b,q,k,b,n,r/p,p,p,p,p,p,p,p/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/P,P,P,P,P,P,P,P/R,N,B,Q,K,B,N,R white KQkq -"
 const animations = new AnimationManager(page);
 const game = new Game("main", startingPosition, new Player(0, 0, true), new Player(0, 0, false), animations);
@@ -37,7 +39,8 @@ const p2p = new P2P(game, clock);
 const menu = new Menu(p2p, game, clock, page); menu.initUI();
 
 initBuffers(page);
-setupInput(mouse, menu, clock, game, page, animations, time);
+console.log(page)
+setupInput(mouse, menu, clock, game, page);
 
 const targetFps = 20; 
 const frameInterval = 1000 / targetFps; 
@@ -45,8 +48,6 @@ let lastFrameTime = 0;
 
 loop();
 function loop() {
-    // console.log("me: " + game.me.pos.x + ", " + game.me.pos.y)
-    // console.log("you: " + game.you.pos.x + ", " + game.you.pos.y)
     requestAnimationFrame(loop);
 
     //limit fps
@@ -77,4 +78,10 @@ function loop() {
 
 export function getTime(){
   return time
+}
+
+function beginTitleSequence(){  
+    page.setState("menuAnimation")
+    animations.add(new MenuAnimation(menu, time))   
+    playSound("title");
 }

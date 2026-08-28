@@ -2,7 +2,7 @@ import MenuAnimation from './animation/MenuAnimation.js';
 import {playSound} from './audio.js'
 import {getTime} from './main.js'
 
-export function setupInput(mouse, menu, clock, game, page, animations){
+export function setupInput(mouse, menu, clock, game, page){
 
     window.addEventListener("mousemove", e =>{
         mouse.updateScreenCoords({x:e.clientX, y:e.clientY}, game.me.perspective)
@@ -40,10 +40,8 @@ export function setupInput(mouse, menu, clock, game, page, animations){
     });
 
     window.addEventListener("pointerdown", () => {
-        if (page.state === "awaitingClick"){
-            page.setState("menuAnimation")
-            animations.add(new MenuAnimation(menu, getTime()))   
-            playSound("title");
+        if (page.state === "awaitingClick" || page.state === "pageLoad"){
+            page.onClick()
         }
     })
 }
