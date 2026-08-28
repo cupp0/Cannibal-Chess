@@ -4,7 +4,7 @@ import {getTime} from './main.js'
 
 export function setupInput(mouse, menu, clock, game, page){
 
-    window.addEventListener("mousemove", e =>{
+    window.addEventListener("pointermove", e =>{
         mouse.updateScreenCoords({x:e.clientX, y:e.clientY}, game.me.perspective)
         clock.onMouseMove(mouse);
         switch (page.state){
@@ -16,16 +16,20 @@ export function setupInput(mouse, menu, clock, game, page){
         }    
     })
 
-    window.addEventListener("mousedown", e => {
+    window.addEventListener("pointerdown", e => {
         clock.onMouseDown(mouse);
         switch (page.state){
             case "menu" : menu.onMouseDown(mouse); break;
             case "game" : game.onMouseDown(mouse.board.x, mouse.board.y); break;
         }  
+
+        if (page.state === "awaitingClick" || page.state === "pageLoad"){
+            page.onClick()
+        }
         
     });
 
-    window.addEventListener("mouseup", e => {
+    window.addEventListener("pointerup", e => {
         clock.onMouseUp(mouse);
         switch (page.state){
             case "game" : game.onMouseUp(mouse.board.x, mouse.board.y); break;
@@ -39,9 +43,4 @@ export function setupInput(mouse, menu, clock, game, page){
         }      
     });
 
-    window.addEventListener("pointerdown", () => {
-        if (page.state === "awaitingClick" || page.state === "pageLoad"){
-            page.onClick()
-        }
-    })
 }
