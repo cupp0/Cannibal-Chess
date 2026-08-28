@@ -133,14 +133,14 @@ export function getBuffer(name){
 
 function drawBoard(ctx) {
 
-    ctx.fillStyle = 'black'
-    ctx.fillRect(0, 0, 262, 262);
+    
+
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 8; x++) {
         ctx.fillStyle = (x + y) % 2 === 0 ? 
         "rgba(180, 168, 130, 255)" : 
         "rgba(28, 34, 47, 255)";
-        ctx.fillRect(1+x * TILE, 1+y * TILE, TILE, TILE);
+        ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
       }
     }
     ctx.strokeStyle = 'black'; 
@@ -148,15 +148,19 @@ function drawBoard(ctx) {
 
     for (let x = 0; x < 9; x++) {
       ctx.beginPath();           
-      ctx.moveTo(1+x*32, 1);          
-      ctx.lineTo(1+x*32, 257); 
+      ctx.moveTo(x*32, 0);          
+      ctx.lineTo(x*32, 256); 
       ctx.stroke(); 
 
       ctx.beginPath();           
-      ctx.moveTo(1, 1+x*32);         
-      ctx.lineTo(257, 1+x*32); 
+      ctx.moveTo(0, x*32);         
+      ctx.lineTo(256, x*32); 
       ctx.stroke(); 
     }
+
+    ctx.strokeStyle = 'black'; 
+    ctx.lineWidth = 4;   
+    ctx.strokeRect(1, 1, 255, 255);
 }
 
 function renderShadow(ctx, shadowWidth, pos, dim){
@@ -424,13 +428,13 @@ function renderClockHands(ctx, ms, x, y, persp){
 
     const time = ms / 1000;
     const radius = 16;
-    const seconds = time % 60;
-    const minutes = (time / 60) % 60;
+    const seconds = Math.floor((time) % 60);
+    const minutes = Math.floor((time / 60) % 60);
 
     const secondAngle = (seconds / 60) * Math.PI * 2;
     const minuteAngle = (minutes / 60) * Math.PI * 2;
 
-    const secondLength = radius * 0.9;
+    const secondLength = radius * 0.8;
     const minuteLength = radius * 0.65;
 
     const cPos = {x: x, y: y}

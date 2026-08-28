@@ -307,11 +307,11 @@ class Game {
   }
 
   onKeyDown(event){
-    if (event.key.startsWith("Arrow")) event.preventDefault();
-    switch(event.key){
-      case "ArrowLeft" : this.tryRetreat(); return;
-      case "ArrowRight" : this.tryAdvance(); return;
-    }
+    //if (event.key.startsWith("Arrow")) event.preventDefault();
+    // switch(event.key){
+    //   case "ArrowLeft" : this.tryRetreat(); return;
+    //   case "ArrowRight" : this.tryAdvance(); return;
+    // }
   }
 
   playMoveAudio(t){

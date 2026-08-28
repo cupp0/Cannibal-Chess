@@ -1,16 +1,18 @@
 import Switch from "./Switch.js";
 import Slider from "./Slider.js";
 import Action from '../net/action.js';
+import ClockSound from '../clockSound.js'
 
 export default class Clock{
     constructor(){
         //relative to top left of board
-        this.pos = {x:260, y:83}
+        this.pos = {x:261, y:83}
         this.currentTime = 0;
         this.whiteTime = 0;
         this.blackTime = 0;
         this.activeColor = "none";
         this.p2p = null;
+        this.tick = new ClockSound();
     }
 
     initUI(){
@@ -62,6 +64,13 @@ export default class Clock{
             case "black" : this.blackTime -= delta; break;
         }
         this.currentTime = now;
+        if (this.activeColor !== "none" &&(this.whiteTime < 0 || this.blackTime < 0)){
+            this.tick.ring();
+            this.whiteTime === 0;
+            this.blackTime === 0;
+            this.activeColor = "none"
+            this.tick.stop();
+        }
     }
 
     onMouseMove(mouse) {
@@ -82,6 +91,7 @@ export default class Clock{
 
     onTimePressed(color){
         this.activeColor = color;
+        this.tick.start();
         if (!this.p2p) return;
         this.p2p.send(new Action("clockButtonPress", 
             {w: this.whiteTime, b: this.blackTime, a: this.activeColor}
@@ -98,12 +108,14 @@ export default class Clock{
                 widget.x = this.map(this.timeControl, 60000, 600000, 268, 310)
             }
         }
+        this.tick.stop()
     }
 
     receiveClockButtonPress(clockState){
         this.whiteTime = clockState.w;
         this.blackTime = clockState.b;
         this.activeColor = clockState.a;
+        this.tick.start();
     }
 
     setTimeControl(mouse){
@@ -112,6 +124,7 @@ export default class Clock{
         this.blackTime = this.timeControl
         this.whiteTime = this.timeControl
         this.activeColor = "none";
+        this.tick.stop()
         if (!this.p2p) return;
         this.p2p.send(new Action("clockSet", 
             {t: this.timeControl, w: this.whiteTime, b: this.blackTime, a: this.activeColor}))
