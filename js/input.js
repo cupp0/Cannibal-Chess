@@ -1,7 +1,3 @@
-import MenuAnimation from './animation/MenuAnimation.js';
-import {playSound} from './audio.js'
-import {getTime} from './main.js'
-
 export function setupInput(mouse, menu, clock, game, page){
 
     window.addEventListener("pointermove", e =>{
@@ -17,6 +13,7 @@ export function setupInput(mouse, menu, clock, game, page){
     })
 
     window.addEventListener("pointerdown", e => {
+        mouse.updateScreenCoords({x:e.clientX, y:e.clientY}, game.me.perspective)
         clock.onMouseDown(mouse);
         switch (page.state){
             case "menu" : menu.onMouseDown(mouse); break;

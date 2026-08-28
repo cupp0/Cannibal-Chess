@@ -39,7 +39,6 @@ const p2p = new P2P(game, clock);
 const menu = new Menu(p2p, game, clock, page); menu.initUI();
 
 initBuffers(page);
-console.log(page)
 setupInput(mouse, menu, clock, game, page);
 
 const targetFps = 20; 
