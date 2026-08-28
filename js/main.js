@@ -19,14 +19,14 @@ const overlay = document.getElementById("overlay");
 const overlayCtx = overlay.getContext("2d");
 
 const background = new Image();
-background.src = './assets/sprites/parkBench.png'
+background.src = './assets/sprites/bench.png'
 
 const display = new Display(canvas, ctx, bgCanvas, bgCtx, overlay, overlayCtx);
 const mouse = new Mouse(display);
 function renderBackground(){
-  const benchDims = background.width*display.multiplier
-  const diff = {x: bgCanvas.width - benchDims, y: bgCanvas.height - benchDims}
-  bgCtx.drawImage(background, diff.x/2, diff.y/2, background.width*display.multiplier, background.height*display.multiplier)
+  const benchDims = {x: background.width*display.multiplier, y: background.height*display.multiplier}
+  const diff = {x: bgCanvas.width - benchDims.x, y: bgCanvas.height - benchDims.y}
+  bgCtx.drawImage(background, diff.x/2, diff.y/2, benchDims.x, benchDims.y)
 }
 const page = new Page("pageLoad", renderBackground)
 const startingPosition = "r,n,b,q,k,b,n,r/p,p,p,p,p,p,p,p/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/P,P,P,P,P,P,P,P/R,N,B,Q,K,B,N,R white KQkq -"

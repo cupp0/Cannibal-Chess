@@ -527,7 +527,6 @@ class Game {
     if (this.boardIndex > 0){
       this.boardIndex--;
       this.loadCFen(this.history[this.boardIndex])
-      console.log(this.currentPlayer)
     }
   }
 
@@ -539,7 +538,7 @@ class Game {
   }
 
   checkForHandShake(){
-    const mePos = this.me.pos;
+    const mePos = {x:this.me.pos.x, y:this.me.pos.y +32 * this.me.perspective};
     const youPos = this.you.pos;
     const dist = {x: Math.abs(mePos.x - youPos.x), y: Math.abs(mePos.y - youPos.y)}
     const shake = dist.x < 15 && dist.y < 15
@@ -573,6 +572,7 @@ class Game {
   deselect(){
     this.selected = null;
     this.validMoves = [];
+    this.setDrag(null, false)
   }
 
   updateValidMoves(from) {

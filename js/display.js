@@ -8,13 +8,13 @@ class Display {
         const minDim = Math.min(window.innerWidth, window.innerHeight);
         this.multiplier = Math.floor(minDim / this.baseSize);
         this.finalSize = this.baseSize * this.multiplier;
-        canvas.width = this.finalSize;
-        canvas.height = this.finalSize;
+        canvas.width = this.finalSize + 5;
+        canvas.height = this.finalSize + 5;
 
         const x = (window.innerWidth - this.finalSize) / 2;
         const y = (window.innerHeight - this.finalSize) / 2;
-        canvas.style.left = `${x}px`;
-        canvas.style.top = `${y}px`;
+        canvas.style.left = `${x-2}px`;
+        canvas.style.top = `${y-2}px`;
         bg.width = window.innerWidth;
         bg.height = window.innerHeight;
         ov.width = window.innerWidth;

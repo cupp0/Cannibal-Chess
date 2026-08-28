@@ -131,13 +131,16 @@ export function getBuffer(name){
   return assetBuffers.get(name)
 }
 
-function drawBoard(ctx, ovCtx) {
+function drawBoard(ctx) {
+
+    ctx.fillStyle = 'black'
+    ctx.fillRect(0, 0, 262, 262);
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 8; x++) {
         ctx.fillStyle = (x + y) % 2 === 0 ? 
         "rgba(180, 168, 130, 255)" : 
         "rgba(28, 34, 47, 255)";
-        ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+        ctx.fillRect(1+x * TILE, 1+y * TILE, TILE, TILE);
       }
     }
     ctx.strokeStyle = 'black'; 
@@ -145,26 +148,24 @@ function drawBoard(ctx, ovCtx) {
 
     for (let x = 0; x < 9; x++) {
       ctx.beginPath();           
-      ctx.moveTo(x*32, 0);          
-      ctx.lineTo(x*32, 264); 
+      ctx.moveTo(1+x*32, 1);          
+      ctx.lineTo(1+x*32, 257); 
       ctx.stroke(); 
 
       ctx.beginPath();           
-      ctx.moveTo(0, x*32);         
-      ctx.lineTo(264, x*32); 
+      ctx.moveTo(1, 1+x*32);         
+      ctx.lineTo(257, 1+x*32); 
       ctx.stroke(); 
     }
-
-    renderShadow(ovCtx, 6, {x:0, y:0}, {x:256, y:256})
 }
 
 function renderShadow(ctx, shadowWidth, pos, dim){
-  ctx.strokeStyle = "rgba(0,0,0, .15)";
-  for (let i = 0; i < shadowWidth; i+=3){
-    ctx.lineWidth = shadowWidth - i; 
+  ctx.fillStyle = "rgba(0,0,0, .12)";
+  for (let i = 0; i < shadowWidth+2; i+=2){
+    //ctx.lineWidth = shadowWidth - i; 
     const finalPos = {x:(pos.x+i-shadowWidth)/2, y:(pos.y+i-shadowWidth)/2} ; 
     const size = {x:dim.x+shadowWidth-i, y: dim.y+shadowWidth-i};
-    ctx.strokeRect(finalPos.x, finalPos.y, size.x, size.y)
+    ctx.fillRect(finalPos.x, finalPos.y, size.x, size.y)
   }
 }
 
@@ -185,7 +186,7 @@ function drawPiece(game, squareX, squareY, ctx){
     const pos = {x: actualTile.x * TILE, y: actualTile.y * TILE}
 
     if (piece.label.toLowerCase() === "k" && game.isKingAttacked(piece.color)){
-        renderBuffer(ctx, highlightBuffer(buffer, 127, "red"), pos.x, pos.y)
+        renderBuffer(ctx, highlightBuffer(buffer, 127, "red"), pos.x+1, pos.y)
         return;
     }
 
@@ -193,7 +194,7 @@ function drawPiece(game, squareX, squareY, ctx){
     if (game.isHovered(squareX, squareY)) highlight += 127;
     if (game.isSelected(squareX, squareY)) highlight += 127;
     if (highlight > 0)renderBuffer(ctx, highlightBuffer(buffer, highlight, "gray"), pos.x, pos.y)
-    else renderBuffer(ctx, buffer, pos.x, pos.y)
+    else renderBuffer(ctx, buffer, pos.x+1, pos.y)
 }
 
 function drawDraggedPiece(ctx, game, squareX, squareY, mouse){
@@ -390,9 +391,9 @@ export function drawMenu(ctx, menu) {
 export function drawGame(ctx, overlayCtx, game, animations, mouse, display, overlay, clock){
   overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);    
   drawClock(game, clock, overlayCtx, display);
-  drawBoard(ctx, overlayCtx);
+  drawBoard(ctx);
   drawMoveDots(ctx, game);
-  drawPieces(ctx, game, animations, mouse);
+  drawPieces(overlayCtx, game, animations, mouse);
   drawPlayers(overlayCtx, game, mouse);
 }
 
@@ -414,9 +415,9 @@ function drawClock(game, clock, ovCtx, display) {
     renderClockHands(ovCtx, clock.blackTime, clock.pos.x+21, clock.pos.y+21, game.me.perspective);
     renderClockHands(ovCtx, clock.whiteTime, clock.pos.x+21, clock.pos.y+68, game.me.perspective);
 
-    game.me.perspective === 1 ?
-    renderShadow(ovCtx, 6, {x:2*cPos.x, y:2*cPos.y}, {x:56, y:90}) :
-    renderShadow(ovCtx, 6, {x:cPos.x - 112, y:cPos.y}, {x:56, y:90}) 
+    // game.me.perspective === 1 ?
+    // renderShadow(ovCtx, 3, {x:2*cPos.x, y:2*cPos.y}, {x:56, y:90}) :
+    // renderShadow(ovCtx, 3, {x:cPos.x - 112, y:cPos.y}, {x:56, y:90}) 
   }
 
 function renderClockHands(ctx, ms, x, y, persp){
