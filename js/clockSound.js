@@ -1,3 +1,4 @@
+
 export default class ClockSound {
     constructor() {
         this.audioCtx = null;
@@ -18,18 +19,17 @@ export default class ClockSound {
         const gain = ctx.createGain();
 
         osc.type = "sine";
-        osc.frequency.setValueAtTime(2800, now);
-        osc.frequency.exponentialRampToValueAtTime(500, now + 0.8);
+        osc.frequency.setValueAtTime(1800, now);
 
         gain.gain.setValueAtTime(0.0, now);
-        gain.gain.linearRampToValueAtTime(0.2, now + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+        gain.gain.linearRampToValueAtTime(0.03, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 5);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
 
         osc.start(now);
-        osc.stop(now + 1.2);
+        osc.stop(now + 5);
     }
 
     tick() {
@@ -68,7 +68,7 @@ export default class ClockSound {
         .connect(ctx.destination);
 
     source.start(now);
-}
+    }
 
     async start() {
         this.init();

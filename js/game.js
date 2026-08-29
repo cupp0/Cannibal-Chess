@@ -312,6 +312,7 @@ class Game {
     switch(event.key){
       case "ArrowLeft" : this.tryRetreat(); return;
       case "ArrowRight" : this.tryAdvance(); return;
+      case "f" : this.boardOrientation *= -1; this.me.perspective *= -1; return;
     }
   }
 

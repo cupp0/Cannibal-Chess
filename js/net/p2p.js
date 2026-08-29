@@ -59,6 +59,10 @@ class P2P{
               console.log(err);
           });
 
+          this.conn.on("close", () => {
+              console.log("no room");
+          });
+
       });
 
   }
