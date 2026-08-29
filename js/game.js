@@ -75,13 +75,12 @@ class Game {
 
   //Is this doing too much
   setupOnlineGame(isHost){
-      //this.me.setPerspective(isHost ? 1 : -1)
-      this.you.active = true;    
-      this.you.setHandAction("handExtended")
-      this.me.setHandAction("handExtended")
+      this.you.active = true;   
       this.setPlayerColors(this.me, isHost ? ["white"] : ["black"])
       this.setPlayerColors(this.you, isHost ? ["black"] : ["white"])
       this.handShakeComplete = false;
+      this.you.setHandAction("handExtended")
+      this.me.setHandAction("handExtended") 
   }
 
   //list of colors this machine can move 
@@ -349,11 +348,7 @@ class Game {
 
   //assumes normal open/closed hand
   updateHandAction(){
-    if (!this.handShakeComplete){
-      this.me.setHandAction("handExtended")
-      this.you.setHandAction("handExtended")
-      return;
-    }
+    if (!this.handShakeComplete)return;
     const myTurn = this.me.colors.includes(this.currentPlayer);
     this.me.setHandAction(myTurn ? "handPointing" : "handClosed")
     this.you.setHandAction(myTurn ? "handClosed" : "handPointing")
