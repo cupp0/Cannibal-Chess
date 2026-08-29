@@ -12,7 +12,7 @@ import PieceDrag from './drag.js';
 import {getTime} from './main.js'
 
 class Game {
-  constructor(id, cFen, me, you, anim){
+  constructor(id, cFen, me, you, anim, onGameEnd){
     this.id = id,
     this.me = me,
     this.you = you,
@@ -23,6 +23,7 @@ class Game {
     this.history = [],
     this.boardIndex = 0,
     this.p2p = null;
+    this.onGameEnd = onGameEnd
     this.setPlayerColors(this.me, ["black", "white"]);
     this.loadCFen(cFen);
     this.storePosition(cFen);
@@ -307,11 +308,11 @@ class Game {
   }
 
   onKeyDown(event){
-    //if (event.key.startsWith("Arrow")) event.preventDefault();
-    // switch(event.key){
-    //   case "ArrowLeft" : this.tryRetreat(); return;
-    //   case "ArrowRight" : this.tryAdvance(); return;
-    // }
+    if (event.key.startsWith("Arrow")) event.preventDefault();
+    switch(event.key){
+      case "ArrowLeft" : this.tryRetreat(); return;
+      case "ArrowRight" : this.tryAdvance(); return;
+    }
   }
 
   playMoveAudio(t){
@@ -369,6 +370,14 @@ class Game {
   receiveDragUpdate(drag){
     if (!drag){this.setDrag(null, false); return;}
     this.setDrag(new PieceDrag(drag.player, drag.square), false)
+  }
+
+  sendBoardState(){
+    this.p2p.send(new Action("boardState", this.getCFen()))
+  }
+
+  receiveBoardState(state){
+    this.loadCFen(state)
   }
 
   receiveHandShake(){
@@ -527,6 +536,7 @@ class Game {
     if (this.boardIndex > 0){
       this.boardIndex--;
       this.loadCFen(this.history[this.boardIndex])
+      if (this.p2p) this.p2p.send(new Action("boardState", this.history[this.boardIndex]))
     }
   }
 
@@ -534,6 +544,7 @@ class Game {
     if (this.boardIndex < this.history.length-1){
       this.boardIndex++;
       this.loadCFen(this.history[this.boardIndex])
+      if (this.p2p) this.p2p.send(new Action("boardState", this.history[this.boardIndex]))
     }
   }
 

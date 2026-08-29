@@ -33,13 +33,14 @@ function renderBackground(){
 const page = new Page("pageLoad", renderBackground, beginTitleSequence)
 const startingPosition = "r,n,b,q,k,b,n,r/p,p,p,p,p,p,p,p/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/P,P,P,P,P,P,P,P/R,N,B,Q,K,B,N,R white KQkq -"
 const animations = new AnimationManager(page);
-const game = new Game("main", startingPosition, new Player(0, 0, true), new Player(0, 0, false), animations);
+const game = new Game("main", startingPosition, new Player(0, 0, true), new Player(0, 0, false), animations, onGameEnd);
 const clock = new Clock(); clock.initUI(); 
 const p2p = new P2P(game, clock);
-const menu = new Menu(p2p, game, clock, page); menu.initUI();
+const mainMenu = new Menu(p2p, game, clock, page); mainMenu.initUI();
+const endMenu = new Menu(p2p, game, clock, page); 
 
 initBuffers(page);
-setupInput(mouse, menu, clock, game, page);
+setupInput(mouse, mainMenu, endMenu, clock, game, page);
 
 const targetFps = 20; 
 const frameInterval = 1000 / targetFps; 
@@ -63,11 +64,14 @@ function loop() {
     //render
     switch(page.state){
       case "menu":
-        drawMenu(ctx, menu);
+        drawMenu(ctx, mainMenu);
         break;
       case "game":
         drawGame(ctx, overlayCtx, game, animations, mouse, display, overlay, clock)
         break;
+      case "endGameDialog":
+        drawMenu(ctx, endMenu)
+        break;  
     }
 
     animations.draw(ctx);
@@ -81,6 +85,12 @@ export function getTime(){
 
 function beginTitleSequence(){  
     page.setState("menuAnimation")
-    animations.add(new MenuAnimation(menu, time))   
+    animations.add(new MenuAnimation(mainMenu, time))   
+    playSound("title");
+}
+
+function onGameEnd(){
+    endMenu.initUI();
+    page.setState("endGameDialog")
     playSound("title");
 }

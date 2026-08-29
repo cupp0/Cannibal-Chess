@@ -1,3 +1,5 @@
+import Action from './action.js'
+
 class P2P{
     
   constructor(game, clock){
@@ -50,7 +52,7 @@ class P2P{
               console.log("Connected!");
               this.setupConnection();
               this.game.setupOnlineGame(false)
-              
+              this.send(new Action("readyForBoard", null))
           });
 
           this.conn.on("error", err => {
@@ -64,13 +66,15 @@ class P2P{
   setupConnection() {
 
       this.conn.on("data", data => {
+          if (data.type === "readyForBoard")this.game.sendBoardState()
           if (data.type === "move")this.game.receivePeerMove(data.action)
           if (data.type === "hand")this.game.receiveHandUpdate(data.action)
           if (data.type === "drag")this.game.receiveDragUpdate(data.action)
           if (data.type === "handshake")this.game.receiveHandShake()
           if (data.type === "clockSet")this.clock.receiveClockSet(data.action)
           if (data.type === "clockButtonPress")this.clock.receiveClockButtonPress(data.action)
-      });
+          if (data.type === "boardState")this.game.receiveBoardState(data.action)
+        });
 
       this.conn.on("close", () => {
           console.log("Disconnected.");

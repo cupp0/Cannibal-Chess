@@ -392,6 +392,22 @@ export function drawMenu(ctx, menu) {
 
 }
 
+export function drawEndGameDialog(ctx, menu) {
+
+      renderBuffer(ctx, assetBuffers.get("titlesplash"), 21, 88);
+
+      for (const widget of menu.widgets){
+        const buffer = assetBuffers.get(widget.name);
+        if (buffer){
+            const b = highlightBuffer(buffer, widget.hover? 255 : 0, "gray")
+            renderBuffer(ctx, b, widget.x, widget.y);
+        } else {
+            widget.draw(ctx);
+        }
+      }
+
+}
+
 export function drawGame(ctx, overlayCtx, game, animations, mouse, display, overlay, clock){
   overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);    
   drawClock(game, clock, overlayCtx, display);

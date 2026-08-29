@@ -20,6 +20,9 @@ class Page{
     if (val === "awaitingClick"){
       if (this.click) this.callback2();
     }
+    if (val === "endGameDialog"){
+      document.body.style.cursor = 'default';
+    }
   }
 
 }
