@@ -16,6 +16,10 @@ export default class Player{
         this.colors = colors;
     }
 
+    switchColors(){
+        this.colors = this.colors.includes("white") ? ["black"] : ["white"]
+    }
+
     setHandAction(action){
         this.handAction = action
     }

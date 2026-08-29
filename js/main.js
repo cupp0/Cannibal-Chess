@@ -1,12 +1,13 @@
 import Game from './game.js';
 import P2P from './net/p2p.js';
 import {initBuffers, drawGame, drawMenu} from './render.js';
+import {createMainMenu, createEndMenu} from './ui/createMenus.js';
 import {setupInput} from './input.js';
 import Display from './display.js';
 import Mouse from './mouse.js';
 import Player from './player.js';
+import Action from './net/action.js'
 import Page from './page.js';
-import Menu from './ui/Menu.js';
 import Clock from './ui/Clock.js';
 import AnimationManager from './animation/animationManager.js';
 import MenuAnimation from './animation/MenuAnimation.js';
@@ -36,8 +37,8 @@ const animations = new AnimationManager(page);
 const game = new Game("main", startingPosition, new Player(0, 0, true), new Player(0, 0, false), animations, onGameEnd);
 const clock = new Clock(); clock.initUI(); 
 const p2p = new P2P(game, clock);
-const mainMenu = new Menu(p2p, game, clock, page); mainMenu.initUI();
-const endMenu = new Menu(p2p, game, clock, page); 
+const mainMenu = createMainMenu(p2p, game, clock, page);
+const endMenu = createEndMenu(p2p, game, clock, page);
 
 initBuffers(page);
 setupInput(mouse, mainMenu, endMenu, clock, game, page);
@@ -60,22 +61,22 @@ function loop() {
     if (game.you.active)game.updatePeer(mouse)
   
     animations.update(time);
+    if (page.state !== "game" && page.state !== "menu")animations.draw(overlayCtx);
 
     //render
     switch(page.state){
       case "menu":
-        drawMenu(ctx, mainMenu);
+        drawMenu(overlayCtx, mainMenu);
+        animations.draw(overlayCtx);
         break;
       case "game":
         drawGame(ctx, overlayCtx, game, animations, mouse, display, overlay, clock)
         break;
       case "endGameDialog":
-        drawMenu(ctx, endMenu)
+        drawMenu(overlayCtx, endMenu)
         break;  
     }
 
-    animations.draw(ctx);
-    
     time++;
 }
 
@@ -89,8 +90,11 @@ function beginTitleSequence(){
     playSound("title");
 }
 
-function onGameEnd(){
-    endMenu.initUI();
+function onGameEnd(result){
+    endMenu.bodyName = result
     page.setState("endGameDialog")
-    playSound("title");
+}
+
+export function setPageState(state){
+  page.setState(state)
 }

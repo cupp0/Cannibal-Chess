@@ -40,8 +40,8 @@ export default class Clock{
             "clockTimerKnob",
             this.pos.x + 4, 
             this.pos.y + 40,
-            4,
-            10
+            6,
+            12
         ),
         ]
 
@@ -121,6 +121,7 @@ export default class Clock{
     setTimeControl(mouse){
         this.slider.x = Math.min(Math.max(mouse.world.x-3, 268), 310);
         this.timeControl = this.map(this.slider.x, 268, 310, 60000, 600000)
+        this.timeControl = this.timeControl - (this.timeControl % 60000)
         this.blackTime = this.timeControl
         this.whiteTime = this.timeControl
         this.activeColor = "none";

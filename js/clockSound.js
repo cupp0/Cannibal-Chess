@@ -18,7 +18,7 @@ export default class ClockSound {
         const gain = ctx.createGain();
 
         osc.type = "sine";
-        osc.frequency.setValueAtTime(700, now);
+        osc.frequency.setValueAtTime(2800, now);
         osc.frequency.exponentialRampToValueAtTime(500, now + 0.8);
 
         gain.gain.setValueAtTime(0.0, now);

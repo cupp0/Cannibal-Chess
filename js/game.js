@@ -9,7 +9,8 @@ import {playSound} from "./audio.js";
 import Move from './move.js';
 import Action from './net/action.js';
 import PieceDrag from './drag.js';
-import {getTime} from './main.js'
+import {getTime, setPageState} from './main.js'
+
 
 class Game {
   constructor(id, cFen, me, you, anim, onGameEnd){
@@ -93,7 +94,7 @@ class Game {
     try{
     return this.board[square.y][square.x]
     } catch (TypeError){
-      console.log(square)
+      console.log(TypeError)
     }
   }
 
@@ -380,6 +381,30 @@ class Game {
       this.handShakeComplete = true;
   }
 
+  resetBoard(isLocalSource){
+      const startingPosition = "r,n,b,q,k,b,n,r/p,p,p,p,p,p,p,p/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/P,P,P,P,P,P,P,P/R,N,B,Q,K,B,N,R white KQkq -"
+      this.loadCFen(startingPosition);
+      setPageState("game")
+      if (this.you.active){
+        this.switchSides();
+        this.handShakeComplete = false;
+        this.me.setHandAction("handExtended")
+        this.you.setHandAction("handExtended")
+        if (isLocalSource)this.p2p.send(new Action("newGame", null))
+      }
+  }
+
+  startNewGame(){
+      this.resetBoard(true)
+  }
+
+  //assumes there is a connected peer and this method is called locally from end menu
+  switchSides(){
+      this.me.switchColors();
+      this.me.perspective *= -1;
+      this.boardOrientation *= -1;
+  }
+
   executeMove(move){
     //all moves do this
     this.relocatePiece(move.from, move.to)
@@ -477,8 +502,8 @@ class Game {
       } 
     })
     if (legalMoves === 0){
-      console.log(kingAttacked ? "checkmate" : "stalemate")
-      this.onGameEnd();
+      const result = kingAttacked ? whoMoved+"Victory" : "draw"
+      this.onGameEnd(result);
     }
   }
 

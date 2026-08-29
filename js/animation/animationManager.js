@@ -38,7 +38,8 @@ export default class AnimationManager {
     }
 
     draw(ctx) {
-        this.animations.forEach(a => a.draw(ctx));
+        
+        this.animations.forEach(a => a.draw(ctx)); 
     }
 
     animateMove(time, move, orientation){

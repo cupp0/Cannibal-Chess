@@ -5,7 +5,12 @@ const menuSpriteNames = [
     "playoffline",
     "host",
     "join",
-    "titlesplash"
+    "titlesplash",
+    "blackVictory",
+    "whiteVictory",
+    "draw",
+    "playAgain",
+    "mainMenu"
 ];
 const handSpriteNames = [
     "handClosed", 
@@ -368,17 +373,9 @@ function drawMoveDots(ctx, game) {
     }
 }
 
-export function menuAssetsLoaded(menu){
-  if (!assetBuffers.get("titlesplash")) return false;
-  if (!assetBuffers.get("host")) return false;
-  if (!assetBuffers.get("join")) return false;
-  if (!assetBuffers.get("playoffline")) return false;
-  return true;
-}
-
 export function drawMenu(ctx, menu) {
 
-      renderBuffer(ctx, assetBuffers.get("titlesplash"), 21, 88);
+      renderBuffer(ctx, assetBuffers.get(menu.bodyName), 21, 88);
 
       for (const widget of menu.widgets){
         const buffer = assetBuffers.get(widget.name);
@@ -414,6 +411,7 @@ export function drawGame(ctx, overlayCtx, game, animations, mouse, display, over
   drawBoard(ctx);
   drawMoveDots(ctx, game);
   drawPieces(overlayCtx, game, animations, mouse);
+  animations.draw(overlayCtx)
   drawPlayers(overlayCtx, game, mouse);
 }
 

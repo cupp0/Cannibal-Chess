@@ -1,10 +1,10 @@
-export function setupInput(mouse, menu, endMenu, clock, game, page){
+export function setupInput(mouse, mainMenu, endMenu, clock, game, page){
 
     window.addEventListener("pointermove", e =>{
         mouse.updateScreenCoords({x:e.clientX, y:e.clientY}, game.me.perspective)
         clock.onMouseMove(mouse);
         switch (page.state){
-            case "menu" : menu.onMouseMove(mouse); break;
+            case "menu" : mainMenu.onMouseMove(mouse); break;
             case "endGameDialog" : endMenu.onMouseMove(mouse); break;
             case "game" :
             game.me.updateLocal(mouse)
@@ -17,7 +17,7 @@ export function setupInput(mouse, menu, endMenu, clock, game, page){
         mouse.updateScreenCoords({x:e.clientX, y:e.clientY}, game.me.perspective)
         clock.onMouseDown(mouse);
         switch (page.state){
-            case "menu" : menu.onMouseDown(mouse); break;
+            case "menu" : mainMenu.onMouseDown(mouse); break;
             case "endGameDialog" : endMenu.onMouseDown(mouse); break;
             case "game" : game.onMouseDown(mouse.board.x, mouse.board.y); break;
         }  
@@ -37,7 +37,7 @@ export function setupInput(mouse, menu, endMenu, clock, game, page){
 
     window.addEventListener("keydown", e => {
         switch (page.state){
-            case "menu" : menu.onKeyDown(e); break;
+            case "menu" : mainMenu.onKeyDown(e); break;
             case "game" : game.onKeyDown(e); break;
         }      
     });

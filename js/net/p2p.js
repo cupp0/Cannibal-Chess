@@ -74,6 +74,7 @@ class P2P{
           if (data.type === "clockSet")this.clock.receiveClockSet(data.action)
           if (data.type === "clockButtonPress")this.clock.receiveClockButtonPress(data.action)
           if (data.type === "boardState")this.game.receiveBoardState(data.action)
+          if (data.type === "newGame")this.game.resetBoard(false)
         });
 
       this.conn.on("close", () => {

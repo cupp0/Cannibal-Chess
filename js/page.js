@@ -25,6 +25,10 @@ class Page{
     }
   }
 
+  reset(){
+    this.state = "menu"
+  }
+
 }
 
 export default Page;
