@@ -6,7 +6,6 @@ import {setupInput} from './input.js';
 import Display from './display.js';
 import Mouse from './mouse.js';
 import Player from './player.js';
-import Action from './net/action.js'
 import Page from './page.js';
 import Clock from './ui/Clock.js';
 import AnimationManager from './animation/animationManager.js';
@@ -31,7 +30,7 @@ function renderBackground(){
   const diff = {x: bgCanvas.width - benchDims.x, y: bgCanvas.height - benchDims.y}
   bgCtx.drawImage(background, diff.x/2, diff.y/2, benchDims.x, benchDims.y)
 }
-const page = new Page("pageLoad", renderBackground, beginTitleSequence)
+const page = new Page("pageLoad", renderBackground, beginTitleSequence, ctx)
 const startingPosition = "r,n,b,q,k,b,n,r/p,p,p,p,p,p,p,p/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/P,P,P,P,P,P,P,P/R,N,B,Q,K,B,N,R white KQkq -"
 const animations = new AnimationManager(page);
 const game = new Game("main", startingPosition, new Player(0, 0, true), new Player(0, 0, false), animations, onGameEnd);
@@ -40,7 +39,7 @@ const p2p = new P2P(game, clock);
 const mainMenu = createMainMenu(p2p, game, clock, page);
 const endMenu = createEndMenu(p2p, game, clock, page);
 
-initBuffers(page);
+initBuffers(page, ctx);
 setupInput(mouse, mainMenu, endMenu, clock, game, page);
 
 const targetFps = 20; 

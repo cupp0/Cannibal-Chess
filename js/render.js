@@ -81,28 +81,40 @@ function generateCombinations(n) {
     return result;
 }
 
-export async function initBuffers(page){
-  await loadBuffers();
+export async function initBuffers(page, ctx){
+  await loadBuffers(ctx);
   page.setState("awaitingClick")
 }
 
-async function loadBuffers(){
+async function loadBuffers(ctx){
+  ctx.fillStyle = 'rgba(26, 26, 26, 1)'
+  let assetsLoaded = 0;
     for (const name of menuSpriteNames) {
       const buffer = await addBuffer("menu", name);
+      assetsLoaded++;
+      ctx.fillRect(0, 128, assetsLoaded*4, 10)
       assetBuffers.set(name, buffer)
     }
     for (const name of handSpriteNames) {
       const buffer = await addBuffer("hand", name);
+      assetsLoaded++;
+      ctx.fillRect(0, 128, assetsLoaded*4, 10)
       assetBuffers.set(name, buffer)
     }
     for (const name of clockSpriteNames) {
       const buffer = await addBuffer("clock", name);
+      assetsLoaded++;
+      ctx.fillRect(0, 128, assetsLoaded*4, 10)
       assetBuffers.set(name, buffer)
     }
     for (const name of pieceSpriteNames) {
       const buffer = await addBuffer("pieces", name);
+      assetsLoaded++;
+      ctx.fillRect(0, 128, assetsLoaded*4, 10)
       assetBuffers.set(name, buffer)
     }
+    ctx.fillStyle = 'rgba(43, 175, 43, 1)'
+    ctx.fillRect(0, 128, assetsLoaded*4, 10)
 }
 
 async function addBuffer(location, name){
