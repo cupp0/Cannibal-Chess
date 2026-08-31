@@ -47,7 +47,17 @@ export default class Player{
     updateLocal(mouse){
         this.pos = mouse.world
         this.relPos = toScreen(this.pos, this.perspective)
-        this.board = this.perspective === 1 ? mouse.board : {x: 7 - mouse.board.x, y: 7 - mouse.board.y}
+        this.updateBoardCoords();
+    }
+
+    updateBoardCoords(){
+
+        //so hand hitbox is a bit closer to where it displays
+        const yOff = this.perspective === 1 ? 10 : -10
+        const adjustedWorld = {x: Math.floor((this.pos.x) / 32), 
+                               y: Math.floor((this.pos.y + yOff) / 32)};
+                      
+        this.board = this.perspective === 1 ? adjustedWorld : {x: 7 - adjustedWorld.x, y: 7 - adjustedWorld.y}
     }
 
 }

@@ -24,7 +24,7 @@ export default class CaptureAnimation {
     }
 
     draw(ctx) {
-        if ((this.currentTime - this.startTime)%4 === 0) this.updateShake();
+        if ((this.currentTime - this.startTime)%2 === 0) this.updateShake();
         const x = this.x * 32 + this.xOff;
         const y = this.y * 32 + this.yOff;
 

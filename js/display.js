@@ -22,7 +22,8 @@ class Display {
 
         this.xOff = (ov.width-canvas.width) / 2
         this.yOff = (ov.height-canvas.height) / 2
-        
+
+        bgctx.setTransform(this.multiplier, 0, 0, this.multiplier, this.xOff, this.yOff);       
         ctx.setTransform(this.multiplier, 0, 0, this.multiplier, 0, 0);
         ovCtx.setTransform(this.multiplier, 0, 0, this.multiplier, this.xOff, this.yOff);
        // bgctx.setTransform(this.multiplier, 0, 0, this.multiplier, 0, 0);

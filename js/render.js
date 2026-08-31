@@ -113,6 +113,10 @@ async function loadBuffers(ctx){
       ctx.fillRect(0, 128, assetsLoaded*4, 10)
       assetBuffers.set(name, buffer)
     }
+
+    const buffer = await addBuffer("", "bench");
+    assetBuffers.set("bench", buffer)
+    
     ctx.fillStyle = 'rgba(43, 175, 43, 1)'
     ctx.fillRect(0, 128, assetsLoaded*4, 10)
 }
@@ -250,7 +254,7 @@ function highlightBuffer(buffer, amount, type){
   return newBuffer
 }
 
-function drawPlayers(ctx, game, mouse){
+function drawPlayers(ctx, game){
 
   if (game.activeHandShake){
       const mePos = {x:game.me.relPos.x - 14, y: game.me.relPos.y};
@@ -351,7 +355,7 @@ export function renderMessage(msg){
 }
 
 function drawMoveDots(ctx, game) {
-    
+    ctx.clearRect(0, 0, 256, 256)
     for (const m of game.validMoves) {
       switch(m.type){
         case "normal" : ctx.fillStyle = "rgba(100, 100, 100, 0.5)"; break;
@@ -420,7 +424,7 @@ export function drawEndGameDialog(ctx, menu) {
 export function drawGame(ctx, overlayCtx, game, animations, mouse, display, overlay, clock){
   overlayCtx.clearRect(-display.xOff, -display.yOff, overlay.width, overlay.height);    
   drawClock(game, clock, overlayCtx, display);
-  drawBoard(ctx);
+  //drawBoard(ctx);
   drawMoveDots(ctx, game);
   drawPieces(overlayCtx, game, animations, mouse);
   animations.draw(overlayCtx)
