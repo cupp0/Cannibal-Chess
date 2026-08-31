@@ -472,8 +472,8 @@ function renderClockHands(ctx, ms, x, y, persp){
     const sPos = {x: x + Math.cos(secondAngle) * secondLength, y: y + Math.sin(secondAngle) * secondLength}
 
     ctx.fillStyle = "black" 
-    ctx.fillRect(mPos.x, mPos.y, 1, 1);
-    ctx.fillRect(sPos.x, sPos.y, 1, 1);
+    // ctx.fillRect(mPos.x, mPos.y, 1, 1);
+    // ctx.fillRect(sPos.x, sPos.y, 1, 1);
     for (let i = - 16; i < 16; i++){
       for (let j = - 16; j < 16; j++){
         const p = {x:x+i, y:y+j}

@@ -10,6 +10,8 @@ import Page from './page.js';
 import Clock from './ui/Clock.js';
 import AnimationManager from './animation/animationManager.js';
 import MenuAnimation from './animation/MenuAnimation.js';
+import MessageAnimation from './animation/messageAnimation.js';
+import Action from './net/action.js';
 import {playSound} from './audio.js'
 
 let time = 0;
@@ -19,6 +21,7 @@ const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 const overlay = document.getElementById("overlay");
 const overlayCtx = overlay.getContext("2d");
+overlayCtx.font = "8px RetroFont";
 
 // const background = new Image();
 // background.src = './assets/sprites/bench.png'
@@ -97,4 +100,17 @@ function onGameEnd(result){
 
 export function setPageState(state){
   page.setState(state)
+}
+
+window.chat = (theChat) => {
+  createChat(theChat, true)
+}
+
+export function createChat(theChat, isLocal){
+  if (page.state !== "game") return;
+  animations.add(new MessageAnimation(time, theChat, 200, true, 5-(display.xOff / display.multiplier)))
+  if (game.you.active && isLocal){
+    console.log("sending chat")
+     p2p.send(new Action("chat", theChat))
+  }
 }
