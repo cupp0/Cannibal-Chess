@@ -5,6 +5,7 @@ sounds.set("capture", new Audio("assets/sound/synthCapture.wav"));
 sounds.set("cannibal", new Audio("assets/sound/synthCannibal.wav"));
 sounds.set("title", new Audio("assets/sound/titleSound.wav"));
 sounds.set("ring", new Audio("assets/sound/ring.wav"));
+sounds.set("pop", new Audio("assets/sound/pop.wav"));
 
 export function playSound(sound){
   sounds.get(sound).currentTime = 0;

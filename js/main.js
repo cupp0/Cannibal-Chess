@@ -109,6 +109,7 @@ window.chat = (theChat) => {
 export function createChat(theChat, isLocal){
   if (page.state !== "game") return;
   animations.add(new MessageAnimation(time, theChat, 200, true, 5-(display.xOff / display.multiplier)))
+  playSound("pop");
   if (game.you.active && isLocal){
     console.log("sending chat")
      p2p.send(new Action("chat", theChat))
