@@ -313,12 +313,14 @@ class Game {
     }
   }
 
-  playMoveAudio(t){
+  playMoveAudio(m){
+    const t = m.type
     if (t === "normal" || t === "castling" || t === "enPassantable") playSound("move");
     if (t === "enPassant" || t === "capture")playSound("capture");
     if (t === "cannibal") playSound("cannibal");
     if (t === "promotion") playSound("ring");
   }
+
 
   // ~ ~ ~ ~ ~ LOGIC ~ ~ ~ ~ ~ //
 
@@ -336,8 +338,10 @@ class Game {
   executeLiveMove(theMove, isLocalSource){
     this.executeMove(theMove)
     this.currentPlayer = this.getOtherPlayer();
-    if (theMove.piece.isZontan())this.shakeBoard();
-    this.playMoveAudio(theMove.type);
+    if (theMove.piece.isZontan()){this.shakeBoard(); playSound("stomp");}
+    else if (this.createdZontan(theMove)) playSound("roar")   
+    else this.playMoveAudio(theMove);
+    
     this.storePosition(this.getCFen());
     this.deselect();
     this.checkForMate(theMove.piece.color)
@@ -350,6 +354,10 @@ class Game {
         theMove
     });
 
+  }
+
+  createdZontan(theMove){
+    return (this.board[theMove.to.y][theMove.to.x].isZontan() && ! theMove.piece.isZontan())
   }
 
   //assumes normal open/closed hand
