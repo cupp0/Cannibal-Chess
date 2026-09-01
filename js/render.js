@@ -208,10 +208,10 @@ function drawPiece(game, squareX, squareY, ctx){
     const piece = game.board[squareY][squareX];
     const buffer = assetBuffers.get(piece.getAssetString());
     const actualTile = game.boardOrientation === 1 ? {x: squareX, y: squareY} : {x: 7-squareX, y: 7-squareY}
-    const pos = {x: actualTile.x * TILE, y: actualTile.y * TILE}
+    const pos = {x: actualTile.x * TILE + piece.posOffset.x, y: actualTile.y * TILE + piece.posOffset.y}
 
     if (piece.label.toLowerCase() === "k" && game.isKingAttacked(piece.color)){
-        renderBuffer(ctx, highlightBuffer(buffer, 127, "red"), pos.x+1, pos.y)
+        renderBuffer(ctx, highlightBuffer(buffer, 127, "red"), pos.x, pos.y)
         return;
     }
 
@@ -219,7 +219,7 @@ function drawPiece(game, squareX, squareY, ctx){
     if (game.isHovered(squareX, squareY)) highlight += 127;
     if (game.isSelected(squareX, squareY)) highlight += 127;
     if (highlight > 0)renderBuffer(ctx, highlightBuffer(buffer, highlight, "gray"), pos.x, pos.y)
-    else renderBuffer(ctx, buffer, pos.x+1, pos.y)
+    else renderBuffer(ctx, buffer, pos.x, pos.y)
 }
 
 function drawDraggedPiece(ctx, game, squareX, squareY, mouse){

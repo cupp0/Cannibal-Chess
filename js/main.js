@@ -37,7 +37,7 @@ function renderBackground(){
 const page = new Page("pageLoad", renderBackground, beginTitleSequence, ctx)
 const startingPosition = "r,n,b,q,k,b,n,r/p,p,p,p,p,p,p,p/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/0,0,0,0,0,0,0,0/P,P,P,P,P,P,P,P/R,N,B,Q,K,B,N,R white KQkq -"
 const animations = new AnimationManager(page);
-const game = new Game("main", startingPosition, new Player(0, 0, true), new Player(0, 0, false), animations, onGameEnd);
+const game = new Game("main", startingPosition, new Player(), new Player(), animations, onGameEnd);
 const clock = new Clock(); clock.initUI(); 
 const p2p = new P2P(game, clock);
 const mainMenu = createMainMenu(p2p, game, clock, page);

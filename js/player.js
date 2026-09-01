@@ -2,14 +2,20 @@ import {toScreen} from './render.js'
 
 export default class Player{
 
-    constructor(x, y){
+    constructor(){
         this.frameCount = 0;
         this.refreshTime = 5;
-        this.pos = {x: x, y: y}
-        this.setTargetPos(x, y)
+        this.pos = {x: 0, y: 0}
+        this.setTargetPos(0, 0)
         this.setPerspective(1)
         this.active = false;
+        this.boardOrientation = 1;
         this.handAction = "handClosed"
+    }
+
+    switchPerspective(){
+        this.perspective *= -1;
+        //this.boardOrientation *= -1;
     }
 
     setColors(colors){
@@ -47,7 +53,7 @@ export default class Player{
     updateLocal(mouse){
         this.pos = mouse.world
         this.relPos = toScreen(this.pos, this.perspective)
-        this.updateBoardCoords();
+        this.updateBoardCoords()
     }
 
     updateBoardCoords(){

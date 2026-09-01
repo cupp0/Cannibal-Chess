@@ -29,6 +29,7 @@ class Game {
     this.loadCFen(cFen);
     this.storePosition(cFen);
     this.initAnimStuff(anim)
+    if (this.id === "main")this.shakeBoard(2)
   }
 
   initAnimStuff(animations){
@@ -97,7 +98,7 @@ class Game {
       console.log(TypeError)
     }
   }
-
+  
   getHover(){
     if (this.hovered) return this.hovered
     return false;
@@ -250,9 +251,6 @@ class Game {
   //coordinates of the square that was pressed
   onMouseDown(x, y){
 
-    //do nothing for now if its not this players turn
-    if (!this.me.colors.includes(this.currentPlayer)) return;
-
     if (this.selected){
 
       //execute a move
@@ -288,12 +286,11 @@ class Game {
 
   onMouseUp(x, y){
 
-    if (!this.me.colors.includes(this.currentPlayer)) return;
-
     if (this.currentDrag){
       
+      const square = this.boardOrientation === 1 ? this.me.board : {x: 7 - this.me.board.x, y: 7 - this.me.board.y}
       //execute a move
-      const theMove = this.validMoves.find(move => this.squareEquals(move.to, {x, y}));
+      const theMove = this.validMoves.find(move => this.squareEquals(move.to, square));
       if(theMove && this.currentPlayer === theMove.piece.color) {
         this.executeLiveMove(theMove, true);
         return;
@@ -312,7 +309,7 @@ class Game {
     switch(event.key){
       case "ArrowLeft" : this.tryRetreat(); return;
       case "ArrowRight" : this.tryAdvance(); return;
-      case "f" : this.boardOrientation *= -1; this.me.perspective *= -1; return;
+      case "f" : this.boardOrientation *= -1; this.me.switchPerspective(); return;
     }
   }
 
@@ -330,9 +327,16 @@ class Game {
     this.setPiece(from, null);
   }
 
+  shakeBoard(){
+    this.forEachSquare((x, y, piece) => {
+      if (piece)piece.shake(4);
+    })
+  }
+
   executeLiveMove(theMove, isLocalSource){
     this.executeMove(theMove)
     this.currentPlayer = this.getOtherPlayer();
+    if (theMove.piece.isZontan())this.shakeBoard();
     this.playMoveAudio(theMove.type);
     this.storePosition(this.getCFen());
     this.deselect();
@@ -367,6 +371,7 @@ class Game {
   receiveDragUpdate(drag){
     if (!drag){this.setDrag(null, false); return;}
     this.setDrag(new PieceDrag(drag.player, drag.square), false)
+    if (this.board[drag.square.y][drag.square.x])this.board[drag.square.y][drag.square.x].posOffset = {x:0, y:0}
   }
 
   sendBoardState(){
@@ -594,11 +599,11 @@ class Game {
   trySelect(x, y){
     if (this.handShakeComplete === false) return;
     const piece = this.getPiece({x, y});
-    if (piece){
-      if (!this.me.colors.includes(piece.color)) return;
+    if (piece && this.me.colors.includes(piece.color)){
       this.selected = {x: x, y: y}
+      piece.posOffset = {x: 0, y: 0}
       this.updateValidMoves(this.selected);
-    }  
+    }
   }
 
   deselect(){
@@ -609,6 +614,7 @@ class Game {
 
   updateValidMoves(from) {
     this.validMoves.length = 0;
+    if (this.board[from.y][from.x].color !== this.currentPlayer) return;
     this.validMoves = this.getValidMoves(from)
   }
 
